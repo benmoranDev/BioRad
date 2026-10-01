@@ -1,0 +1,6 @@
+{
+  "name": "Biorad Cursos - Portal Acadêmico de Radiologia & Tomografia",
+  "description": "Plataforma oficial Biorad Cursos de capacitação em radiologia, tomografia computadorizada e diagnóstico por imagem com emissão de certificados oficiais de 40h.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,125 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: dark light;
+}
+
+html {
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+html.dark {
+  background-color: #090d16;
+  color: #dfe2ef;
+}
+
+html:not(.dark) {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+/* Custom crisp scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 9999px;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s ease-out forwards;
+}
+
+@keyframes viewFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-view-fade-in {
+  animation: viewFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: opacity, transform;
+}
+
+@keyframes gantrySpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes gantrySpinReverse {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes xrayPulse {
+  0%, 100% {
+    opacity: 0.4;
+    filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.4));
+  }
+  50% {
+    opacity: 0.9;
+    filter: drop-shadow(0 0 20px rgba(245, 158, 11, 0.95));
+  }
+}
+
+@keyframes haloPulse {
+  0%, 100% {
+    opacity: 0.6;
+    box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 35px rgba(6, 182, 212, 0.85);
+  }
+}
+
+.animate-gantry-spin {
+  animation: gantrySpin var(--spin-duration, 0.5s) linear infinite;
+}
+
+.animate-xray-pulse {
+  animation: xrayPulse 0.4s ease-in-out infinite;
+}
+
+.animate-halo-pulse {
+  animation: haloPulse 1.2s ease-in-out infinite;
+}
