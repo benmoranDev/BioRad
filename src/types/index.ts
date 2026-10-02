@@ -256,6 +256,44 @@ export interface CursoLivre {
   accessPeriodDays?: number;
 }
 
+export interface PixInstallment {
+  id: string;
+  installmentNumber: number; // 1, 2, 3, etc.
+  totalInstallments: number; // ex: 3x, 4x, 6x, 12x
+  amount: number;
+  dueDate: string; // YYYY-MM-DD
+  status: 'paid' | 'pending' | 'overdue';
+  paidAt?: string;
+  pixCopyPaste: string;
+  qrCodeUrl?: string;
+  pixEndToEndId?: string;
+  receiptCode?: string;
+}
+
+export interface StudentMonthlySubscription {
+  id: string;
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  studentCpf?: string;
+  studentAvatar?: string;
+  courseId: string;
+  courseTitle: string;
+  totalAmount: number;
+  monthlyAmount: number;
+  totalInstallments: number;
+  paidInstallmentsCount: number;
+  remainingInstallmentsCount: number;
+  planType: 'pix_monthly' | 'pix_installments';
+  status: 'active' | 'completed' | 'paused' | 'defaulted';
+  startDate: string;
+  nextDueDate?: string;
+  installments: PixInstallment[];
+  autoAccessRelease: boolean;
+  createdAt: string;
+  lastPaymentDate?: string;
+}
+
 export interface PaymentTransaction {
   id: string;
   transactionCode: string;
@@ -266,12 +304,19 @@ export interface PaymentTransaction {
   studentCpf?: string;
   amount: number;
   paymentMethod: 'pix' | 'credit';
+  planType?: 'single' | 'pix_monthly' | 'credit_card';
+  installmentNumber?: number;
+  totalInstallments?: number;
+  subscriptionId?: string;
   installments?: number;
   cardBrand?: string;
   cardLast4?: string;
   pixQrCodeString?: string;
   pixEndToEndId?: string;
-  status: 'pending' | 'approved' | 'completed';
+  status: 'pending' | 'approved' | 'completed' | 'refunded' | 'failed';
+  refundedAt?: string;
+  refundReason?: string;
+  refundTransactionId?: string;
   createdAt: string;
   paidAt?: string;
   certificateWorkloadHours: number; // 40h

@@ -4,6 +4,7 @@ import { storageService } from '../../services/storage';
 import { formatCpf, isValidCpf } from '../../utils/cpfValidator';
 import { InstructorContentModal } from './InstructorContentModal';
 import { AuditLogsManager } from '../admin/AuditLogsManager';
+import { StudentPaymentsDashboard } from '../dashboard/StudentPaymentsDashboard';
 import {
   ResponsiveContainer,
   BarChart,
@@ -69,7 +70,7 @@ export const AdminManagementView: React.FC<AdminManagementViewProps> = ({
   theme = 'dark',
   onNavigateTab
 }) => {
-  const [activeTab, setActiveTab] = useState<'courses' | 'content_matrix' | 'users' | 'analytics' | 'logs'>('courses');
+  const [activeTab, setActiveTab] = useState<'courses' | 'content_matrix' | 'users' | 'analytics' | 'finance' | 'logs'>('courses');
   
   // Modals state
   const [showAddCourseModal, setShowAddCourseModal] = useState(false);
@@ -639,6 +640,18 @@ export const AdminManagementView: React.FC<AdminManagementViewProps> = ({
         >
           <span className="material-symbols-outlined text-sm">insights</span>
           <span>Relatórios de Desempenho &amp; Analytics</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('finance')}
+          className={`px-5 py-2.5 rounded-full font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+            activeTab === 'finance'
+              ? isDark ? 'bg-[#4cd7f6]/20 text-[#4cd7f6] border border-[#4cd7f6]/30 shadow-sm' : 'bg-cyan-50 text-cyan-700 border border-cyan-300 shadow-sm'
+              : isDark ? 'text-gray-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <span className="material-symbols-outlined text-sm">payments</span>
+          <span>Pagamentos OK &amp; Matrículas</span>
         </button>
 
         <button
@@ -1479,7 +1492,12 @@ export const AdminManagementView: React.FC<AdminManagementViewProps> = ({
         </div>
       )}
 
-      {/* ==================== TAB 4: AUDIT LOGS & USER ACTIVITIES ==================== */}
+      {/* ==================== TAB 5: STUDENT PAYMENTS & PIX SUBSCRIPTIONS ==================== */}
+      {activeTab === 'finance' && (
+        <StudentPaymentsDashboard theme={theme} />
+      )}
+
+      {/* ==================== TAB 6: AUDIT LOGS & USER ACTIVITIES ==================== */}
       {activeTab === 'logs' && (
         <div className="space-y-6">
           {/* Main Paginated Audit Logs Manager */}

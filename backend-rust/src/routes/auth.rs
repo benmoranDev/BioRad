@@ -8,11 +8,13 @@ use crate::models::{
     ApiResponse, AuditLog, AuthResponse, Claims, LoginRequest, RegisterRequest, UserProfile, UserRole,
 };
 use crate::services::supabase::SupabaseService;
+use crate::services::mercadopago::MercadoPagoService;
 
 #[derive(Clone)]
 pub struct AppState {
     pub config: AppConfig,
     pub supabase: SupabaseService,
+    pub mercadopago: MercadoPagoService,
     pub db: Option<sqlx::PgPool>,
 }
 

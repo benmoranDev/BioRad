@@ -8,6 +8,7 @@ mod services;
 use config::AppConfig;
 use routes::auth::AppState;
 use services::supabase::SupabaseService;
+use services::mercadopago::MercadoPagoService;
 use std::net::SocketAddr;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
@@ -32,12 +33,16 @@ async fn main() -> anyhow::Result<()> {
     // Initialize Supabase HTTP service
     let supabase = SupabaseService::new(config.clone());
 
+    // Initialize Mercado Pago payment service
+    let mercadopago = MercadoPagoService::new(&config);
+
     // Initialize sqlx PostgreSQL connection pool
     let db_pool = db::init_db_pool(&config.database_url).await;
 
     let state = AppState {
         config: config.clone(),
         supabase,
+        mercadopago,
         db: db_pool,
     };
 

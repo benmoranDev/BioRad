@@ -8,6 +8,8 @@ import { formatCpf, isValidCpf } from '../../utils/cpfValidator';
 import { EnrollmentEmailModal } from '../modals/EnrollmentEmailModal';
 import { buildEnrollmentEmailData, calculateExpirationDate, EnrollmentEmailData } from '../../utils/emailTemplates';
 import { emailService } from '../../services/emailService';
+import { paymentService } from '../../services/paymentService';
+import { StudentPaymentsDashboard } from '../dashboard/StudentPaymentsDashboard';
 
 interface PaymentCheckoutViewProps {
   onPaymentSuccess?: (courseTitle: string) => void;
@@ -35,8 +37,8 @@ export const PaymentCheckoutView: React.FC<PaymentCheckoutViewProps> = ({
   const [editMerchantName, setEditMerchantName] = useState(pixSettings.merchantName || 'BIORAD CURSOS S/A');
   const [editMerchantCity, setEditMerchantCity] = useState(pixSettings.merchantCity || 'SAO PAULO');
 
-  // Tab mode: '40h_courses' | 'bundle' | 'history'
-  const [checkoutMode, setCheckoutMode] = useState<'40h_courses' | 'bundle' | 'history'>('40h_courses');
+  // Tab mode: '40h_courses' | 'bundle' | 'subscriptions' | 'history'
+  const [checkoutMode, setCheckoutMode] = useState<'40h_courses' | 'bundle' | 'subscriptions' | 'history'>('40h_courses');
 
   // Selected item
   const [selectedCourse, setSelectedCourse] = useState<CursoLivre | null>(() => {
@@ -51,8 +53,8 @@ export const PaymentCheckoutView: React.FC<PaymentCheckoutViewProps> = ({
   // Payment Method: 'pix' | 'credit'
   const [paymentMethod, setPaymentMethod] = useState<'pix' | 'credit'>('pix');
 
-  // Gateway mode for credit card: 'mercadopago' | 'asaas' | 'direct'
-  const [cardGateway, setCardGateway] = useState<'mercadopago' | 'asaas' | 'direct'>('mercadopago');
+  // Gateway mode for credit card: locked to Mercado Pago
+  const [cardGateway] = useState<'mercadopago'>('mercadopago');
 
   // Credit card state
   const [cardNumber, setCardNumber] = useState('4532 8901 2345 7890');
@@ -121,7 +123,7 @@ export const PaymentCheckoutView: React.FC<PaymentCheckoutViewProps> = ({
   const currentTitle = activeItem ? `${activeItem.title} (40h)` : selectedBundlePlan.title;
   const currentWorkload = activeItem ? 40 : 180;
 
-  // Pix Copia-e-Cola payload with real EMV standard BRCode using User's Pix Key
+  // Pix Copia-e-Cola payload with real EMV standard BRCode using User's Pix Key (À Vista)
   const pixQrCodeString = useMemo(() => {
     const courseCode = activeItem ? activeItem.code : 'RADBIO';
     const txId = `RAD${courseCode.replace(/[^A-Za-z0-9]/g, '')}`.slice(0, 20);
@@ -233,79 +235,142 @@ export const PaymentCheckoutView: React.FC<PaymentCheckoutViewProps> = ({
     setProcessingStage(
       paymentMethod === 'pix'
         ? `Consultando chave Pix (${pixSettings.keyValue}) no Banco Central (Bacen SPI)...`
-        : cardGateway === 'mercadopago'
-        ? 'Autenticando via Mercado Pago API • Análise Antifraude 3D Secure...'
-        : cardGateway === 'asaas'
-        ? 'Conectando ao gateway bancário Asaas • Gerando Tokenização PCI...'
-        : 'Processando transação com Adquirente Bancária (Criptografia SSL 256 bits)...'
+        : 'Autenticando via Mercado Pago API • Análise Antifraude 3D Secure...'
     );
 
-    setTimeout(() => {
-      setProcessingStage(
-        paymentMethod === 'pix'
-          ? `PIX Confirmado na chave ${pixSettings.keyValue}! Liquidação instantânea homologada.`
-          : 'Cartão Autorizado com Sucesso! Token de transação criptografado recebido.'
-      );
+    const targetCourseId = activeItem ? activeItem.id : selectedBundlePlan.id;
 
-      setTimeout(() => {
-        const { expiresAtStr } = calculateExpirationDate(60);
-        const nowStr = new Date().toLocaleString('pt-BR');
+    if (paymentMethod === 'pix') {
+      paymentService.processPixPayment({
+        courseId: targetCourseId,
+        courseTitle: currentTitle,
+        studentName: currentUser.name,
+        studentEmail: currentUser.email,
+        studentCpf: cardCpf || currentUser.cpf || '384.912.748-02',
+        amount: currentPrice
+      }).then(res => {
+        setProcessingStage(`PIX Mercado Pago confirmado! Liquidação instantânea homologada.`);
 
-        const tx: PaymentTransaction = {
-          id: `tx_${Date.now()}`,
-          transactionCode: `RAD-TX-${Date.now().toString().slice(-8)}`,
-          courseId: activeItem ? activeItem.id : selectedBundlePlan.id,
-          courseTitle: currentTitle,
-          studentName: currentUser.name,
-          studentEmail: currentUser.email,
-          studentCpf: cardCpf || currentUser.cpf || '384.912.748-02',
-          amount: currentPrice,
-          paymentMethod,
-          installments: paymentMethod === 'credit' ? installments : 1,
-          cardBrand: paymentMethod === 'credit' ? cardBrand : undefined,
-          cardLast4: paymentMethod === 'credit' ? cardNumber.slice(-4) : undefined,
-          pixQrCodeString: paymentMethod === 'pix' ? pixQrCodeString : undefined,
-          pixEndToEndId: paymentMethod === 'pix' ? `E28491092${Date.now()}88941BCB` : undefined,
-          status: 'completed',
-          createdAt: nowStr,
-          paidAt: nowStr,
-          certificateWorkloadHours: currentWorkload,
-          accessPeriodDays: 60,
-          expiresAt: expiresAtStr
-        };
+        setTimeout(() => {
+          const { expiresAtStr } = calculateExpirationDate(60);
+          const nowStr = new Date().toLocaleString('pt-BR');
 
-        const emailData = buildEnrollmentEmailData(tx, currentUser, 60);
-        setEmailModalData(emailData);
+          const tx: PaymentTransaction = {
+            id: res.transactionId,
+            transactionCode: res.transactionCode,
+            courseId: targetCourseId,
+            courseTitle: currentTitle,
+            studentName: currentUser.name,
+            studentEmail: currentUser.email,
+            studentCpf: cardCpf || currentUser.cpf || '384.912.748-02',
+            amount: currentPrice,
+            paymentMethod: 'pix',
+            planType: 'single',
+            installments: 1,
+            pixQrCodeString: res.qrCode || pixQrCodeString,
+            pixEndToEndId: res.pixEndToEndId || `E28491092${Date.now()}88941BCB`,
+            status: 'completed',
+            createdAt: nowStr,
+            paidAt: nowStr,
+            certificateWorkloadHours: currentWorkload,
+            accessPeriodDays: 60,
+            expiresAt: expiresAtStr
+          };
 
-        // Dispatch email confirmation and update student access lifecycle
-        emailService.sendEnrollmentConfirmation(tx, currentUser, 60);
+          const emailData = buildEnrollmentEmailData(tx, currentUser, 60);
+          setEmailModalData(emailData);
+          emailService.sendEnrollmentConfirmation(tx, currentUser, 60);
 
-        if (activeItem) {
-          storageService.enrollInCursoLivre(activeItem.id, tx);
-        } else {
-          storageService.savePaymentTransaction(tx);
-          // Unlock all courses if bundle
-          const allCourses = storageService.getCursosLivres();
-          allCourses.forEach(c => {
-            c.isEnrolled = true;
-            c.expiresAt = expiresAtStr;
-            c.enrolledAt = new Date().toLocaleDateString('pt-BR');
-            c.accessPeriodDays = 60;
-          });
-          storageService.setCursosLivres(allCourses);
-        }
+          if (activeItem) {
+            storageService.enrollInCursoLivre(activeItem.id, tx);
+          } else {
+            storageService.savePaymentTransaction(tx);
+            const allCourses = storageService.getCursosLivres();
+            allCourses.forEach(c => {
+              c.isEnrolled = true;
+              c.expiresAt = expiresAtStr;
+              c.enrolledAt = new Date().toLocaleDateString('pt-BR');
+              c.accessPeriodDays = 60;
+            });
+            storageService.setCursosLivres(allCourses);
+          }
 
-        // Refresh internal lists
-        setCursosLivres(storageService.getCursosLivres());
-        setTransactionsList(storageService.getPaymentTransactions());
+          setCursosLivres(storageService.getCursosLivres());
+          setTransactionsList(storageService.getPaymentTransactions());
+          setIsProcessing(false);
+          setCompletedTransaction(tx);
+          if (onPaymentSuccess) onPaymentSuccess(currentTitle);
+        }, 800);
+      });
+    } else {
+      paymentService.processCardPayment({
+        courseId: targetCourseId,
+        courseTitle: currentTitle,
+        studentName: currentUser.name,
+        studentEmail: currentUser.email,
+        studentCpf: cardCpf || currentUser.cpf || '384.912.748-02',
+        amount: currentPrice,
+        cardNumber,
+        cardHolder,
+        cardExpiry,
+        cardCvv,
+        installments,
+        cardBrand
+      }).then(res => {
+        setProcessingStage(`Cartão Mercado Pago Aprovado em ${installments}x de R$ ${(currentPrice / installments).toFixed(2)}!`);
 
-        setIsProcessing(false);
-        setCompletedTransaction(tx);
-        if (onPaymentSuccess) {
-          onPaymentSuccess(currentTitle);
-        }
-      }, 900);
-    }, 1200);
+        setTimeout(() => {
+          const { expiresAtStr } = calculateExpirationDate(60);
+          const nowStr = new Date().toLocaleString('pt-BR');
+
+          const tx: PaymentTransaction = {
+            id: res.transactionId,
+            transactionCode: res.transactionCode,
+            courseId: targetCourseId,
+            courseTitle: currentTitle,
+            studentName: currentUser.name,
+            studentEmail: currentUser.email,
+            studentCpf: cardCpf || currentUser.cpf || '384.912.748-02',
+            amount: currentPrice,
+            paymentMethod: 'credit',
+            planType: installments > 1 ? 'credit_card' : 'single',
+            installments,
+            cardBrand,
+            cardLast4: cardNumber.slice(-4),
+            status: 'completed',
+            createdAt: nowStr,
+            paidAt: nowStr,
+            certificateWorkloadHours: currentWorkload,
+            accessPeriodDays: 60,
+            expiresAt: expiresAtStr
+          };
+
+          const emailData = buildEnrollmentEmailData(tx, currentUser, 60);
+          setEmailModalData(emailData);
+          emailService.sendEnrollmentConfirmation(tx, currentUser, 60);
+
+          if (activeItem) {
+            storageService.enrollInCursoLivre(activeItem.id, tx);
+          } else {
+            storageService.savePaymentTransaction(tx);
+            const allCourses = storageService.getCursosLivres();
+            allCourses.forEach(c => {
+              c.isEnrolled = true;
+              c.expiresAt = expiresAtStr;
+              c.enrolledAt = new Date().toLocaleDateString('pt-BR');
+              c.accessPeriodDays = 60;
+            });
+            storageService.setCursosLivres(allCourses);
+          }
+
+          setCursosLivres(storageService.getCursosLivres());
+          setTransactionsList(storageService.getPaymentTransactions());
+          setIsProcessing(false);
+          setCompletedTransaction(tx);
+          if (onPaymentSuccess) onPaymentSuccess(currentTitle);
+        }, 800);
+      });
+    }
   };
 
   return (
@@ -362,6 +427,22 @@ export const PaymentCheckoutView: React.FC<PaymentCheckoutViewProps> = ({
             >
               <span className="material-symbols-outlined text-base">auto_awesome</span>
               <span>Passaporte VIP</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setCheckoutMode('subscriptions');
+                setCompletedTransaction(null);
+              }}
+              className={`px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                checkoutMode === 'subscriptions'
+                  ? 'bg-purple-500 text-white shadow-md shadow-purple-500/30'
+                  : isDark ? 'text-gray-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <span className="material-symbols-outlined text-base">point_of_sale</span>
+              <span>Dashboard de Pagamentos OK</span>
             </button>
 
             <button
@@ -489,6 +570,11 @@ export const PaymentCheckoutView: React.FC<PaymentCheckoutViewProps> = ({
               </div>
             )}
           </div>
+        </div>
+      ) : checkoutMode === 'subscriptions' ? (
+        /* SUBSCRIPTIONS & MONTHLY PIX DASHBOARD VIEW */
+        <div className="space-y-6 animate-fade-in">
+          <StudentPaymentsDashboard theme={theme} isStudentView={currentUser.role === 'student'} />
         </div>
       ) : !completedTransaction ? (
         /* MAIN CHECKOUT WORKSPACE (PIX / CARD) */
@@ -655,8 +741,8 @@ export const PaymentCheckoutView: React.FC<PaymentCheckoutViewProps> = ({
                   >
                     <span className="material-symbols-outlined text-lg">credit_card</span>
                     <span>Cartão de Crédito</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400">
-                      Até 12x
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400 font-bold">
+                      Até 6x Mercado Pago
                     </span>
                   </button>
                 </div>
@@ -817,6 +903,34 @@ export const PaymentCheckoutView: React.FC<PaymentCheckoutViewProps> = ({
                     </form>
                   )}
 
+                  {/* PIX Modalidade: À Vista Oficial */}
+                  <div className={`p-4 rounded-2xl border flex items-center justify-between gap-3 ${
+                    isDark ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-emerald-50 border-emerald-200'
+                  }`}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                        <span className="material-symbols-outlined text-xl">bolt</span>
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-xs text-emerald-400">PIX Instantâneo À Vista</span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30">
+                            Liberação Imediata
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-gray-400 mt-0.5">
+                          Compensação bancária oficial em segundos via BACEN SPI com emissão imediata da matrícula.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="text-[10px] text-gray-400 block font-semibold">Valor À Vista</span>
+                      <span className="text-lg font-black font-mono text-emerald-400">
+                        R$ {currentPrice.toFixed(2).replace('.', ',')}
+                      </span>
+                    </div>
+                  </div>
+
                   <div className={`p-5 rounded-2xl border text-center space-y-4 ${
                     isDark ? 'bg-[#0e121d] border-white/10' : 'bg-slate-50 border-slate-200'
                   }`}>
@@ -934,50 +1048,25 @@ export const PaymentCheckoutView: React.FC<PaymentCheckoutViewProps> = ({
               {/* CREDIT CARD GATEWAY VIEW */}
               {paymentMethod === 'credit' && (
                 <div className="space-y-6 animate-fade-in">
-                  {/* Gateway Provider Selector */}
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                      Gateway Adquirente de Processamento
-                    </label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setCardGateway('mercadopago')}
-                        className={`p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                          cardGateway === 'mercadopago'
-                            ? 'bg-[#009ee3]/20 border-[#009ee3] text-[#009ee3] ring-1 ring-[#009ee3]/40'
-                            : isDark ? 'bg-white/5 border-white/10 text-gray-400' : 'bg-slate-50 border-slate-200 text-slate-600'
-                        }`}
-                      >
-                        <span className="material-symbols-outlined text-sm">handshake</span>
-                        <span>Mercado Pago</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setCardGateway('asaas')}
-                        className={`p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                          cardGateway === 'asaas'
-                            ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 ring-1 ring-cyan-400/40'
-                            : isDark ? 'bg-white/5 border-white/10 text-gray-400' : 'bg-slate-50 border-slate-200 text-slate-600'
-                        }`}
-                      >
-                        <span className="material-symbols-outlined text-sm">credit_card</span>
-                        <span>Asaas Gateway</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setCardGateway('direct')}
-                        className={`p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                          cardGateway === 'direct'
-                            ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 ring-1 ring-emerald-400/40'
-                            : isDark ? 'bg-white/5 border-white/10 text-gray-400' : 'bg-slate-50 border-slate-200 text-slate-600'
-                        }`}
-                      >
-                        <span className="material-symbols-outlined text-sm">security</span>
-                        <span>Rede / Cielo</span>
-                      </button>
+                  {/* Mercado Pago Official Gateway Banner */}
+                  <div className={`p-4 rounded-2xl border flex items-center justify-between gap-3 ${
+                    isDark ? 'bg-[#009ee3]/10 border-[#009ee3]/30' : 'bg-sky-50 border-sky-200'
+                  }`}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-[#009ee3]/20 text-[#009ee3] border border-[#009ee3]/30 flex items-center justify-center shrink-0">
+                        <span className="material-symbols-outlined text-xl">handshake</span>
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-xs text-[#009ee3]">Mercado Pago Gateway Oficial</span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#009ee3]/20 text-[#009ee3] font-bold border border-[#009ee3]/30">
+                            Até 6x Sem Juros
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-gray-400 mt-0.5">
+                          Processamento seguro com checkout transparente e proteção ao comprador Mercado Pago.
+                        </p>
+                      </div>
                     </div>
                   </div>
 
@@ -1129,7 +1218,7 @@ export const PaymentCheckoutView: React.FC<PaymentCheckoutViewProps> = ({
                     </div>
 
                     <div>
-                      <label className="block mb-1 font-bold text-gray-300">Opções de Parcelamento</label>
+                      <label className="block mb-1 font-bold text-gray-300">Opções de Parcelamento Mercado Pago</label>
                       <select
                         value={installments}
                         onChange={e => setInstallments(Number(e.target.value))}
@@ -1140,9 +1229,9 @@ export const PaymentCheckoutView: React.FC<PaymentCheckoutViewProps> = ({
                         <option value={1}>1x de R$ {currentPrice.toFixed(2).replace('.', ',')} (à vista sem juros)</option>
                         <option value={2}>2x de R$ {(currentPrice / 2).toFixed(2).replace('.', ',')} sem juros</option>
                         <option value={3}>3x de R$ {(currentPrice / 3).toFixed(2).replace('.', ',')} sem juros</option>
+                        <option value={4}>4x de R$ {(currentPrice / 4).toFixed(2).replace('.', ',')} sem juros</option>
+                        <option value={5}>5x de R$ {(currentPrice / 5).toFixed(2).replace('.', ',')} sem juros</option>
                         <option value={6}>6x de R$ {(currentPrice / 6).toFixed(2).replace('.', ',')} sem juros</option>
-                        <option value={10}>10x de R$ {(currentPrice / 10).toFixed(2).replace('.', ',')} sem juros</option>
-                        <option value={12}>12x de R$ {(currentPrice / 12).toFixed(2).replace('.', ',')} sem juros</option>
                       </select>
                     </div>
                   </div>

@@ -8,6 +8,8 @@ pub struct AppConfig {
     pub supabase_service_role_key: String,
     pub database_url: String,
     pub jwt_secret: String,
+    pub mercadopago_access_token: String,
+    pub mercadopago_public_key: String,
     pub allowed_origins: Vec<String>,
 }
 
@@ -37,6 +39,12 @@ impl AppConfig {
         let jwt_secret = env::var("JWT_SECRET")
             .unwrap_or_else(|_| "biorad_secret_jwt_key_2026_default".to_string());
 
+        let mercadopago_access_token = env::var("MERCADOPAGO_ACCESS_TOKEN")
+            .unwrap_or_else(|_| "APP_USR-790239556101-092814-mock-token".to_string());
+
+        let mercadopago_public_key = env::var("MERCADOPAGO_PUBLIC_KEY")
+            .unwrap_or_else(|_| "APP_USR-pub-790239556101".to_string());
+
         let allowed_origins_raw = env::var("ALLOWED_ORIGIN")
             .unwrap_or_else(|_| "http://localhost:3000,http://127.0.0.1:3000".to_string());
 
@@ -51,7 +59,10 @@ impl AppConfig {
             supabase_url,
             supabase_anon_key,
             supabase_service_role_key,
+            database_url,
             jwt_secret,
+            mercadopago_access_token,
+            mercadopago_public_key,
             allowed_origins,
         }
     }

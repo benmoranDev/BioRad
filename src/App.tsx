@@ -22,6 +22,7 @@ import { TeacherGradesView } from './components/views/TeacherGradesView';
 import { PendenciasView } from './components/views/PendenciasView';
 import { CertificatesView } from './components/views/CertificatesView';
 import { AdminManagementView } from './components/views/AdminManagementView';
+import { FinanceiroView } from './components/views/FinanceiroView';
 import { PaymentCheckoutView } from './components/views/PaymentCheckoutView';
 import { CursosLivresView } from './components/views/CursosLivresView';
 import { SettingsView } from './components/views/SettingsView';
@@ -536,6 +537,22 @@ export default function App() {
                   <span className="material-symbols-outlined text-4xl text-red-400 mb-2">lock</span>
                   <h3 className="text-lg font-bold text-red-400">Acesso Restrito ao Administrador Geral</h3>
                   <p className="text-xs text-slate-400 mt-2">Você está autenticado com um perfil que não possui privilégios de gestão institucional.</p>
+                </div>
+              )
+            )}
+
+            {currentTab === 'financeiro' && (
+              currentUser.role === 'admin' ? (
+                <FinanceiroView
+                  theme={theme}
+                  onShowToast={showToast}
+                  onNavigateTab={handleNavigateTab}
+                />
+              ) : (
+                <div className="p-8 max-w-xl mx-auto my-12 text-center rounded-2xl border border-red-500/30 bg-red-500/10">
+                  <span className="material-symbols-outlined text-4xl text-red-400 mb-2">lock</span>
+                  <h3 className="text-lg font-bold text-red-400">Acesso Restrito ao Administrador Geral</h3>
+                  <p className="text-xs text-slate-400 mt-2">Apenas o Administrador possui acesso à auditoria de transações financeiras e estornos.</p>
                 </div>
               )
             )}

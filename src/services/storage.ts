@@ -15,7 +15,9 @@ import {
   CursoLivre,
   PaymentTransaction,
   SmtpConfig,
-  AuditLog
+  AuditLog,
+  StudentMonthlySubscription,
+  PixInstallment
 } from '../types';
 import {
   initialCurrentUser,
@@ -51,8 +53,292 @@ const KEYS = {
   PAYMENTS: 'radbio_payments',
   PIX_SETTINGS: 'radbio_pix_settings',
   SMTP_CONFIG: 'radbio_smtp_config',
-  AUDIT_LOGS: 'radbio_audit_logs'
+  AUDIT_LOGS: 'radbio_audit_logs',
+  STUDENT_SUBSCRIPTIONS: 'radbio_student_subscriptions'
 };
+
+export const initialStudentSubscriptions: StudentMonthlySubscription[] = [
+  {
+    id: 'sub_01',
+    studentId: 'u_beatriz',
+    studentName: 'Beatriz Ramos Ferreira',
+    studentEmail: 'beatriz.ramos@aluno.radbio.edu.br',
+    studentCpf: '123.456.789-00',
+    studentAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
+    courseId: 'cl_01',
+    courseTitle: 'Tomografia Computadorizada Clínica & Operação do Activion 16',
+    totalAmount: 149.00,
+    monthlyAmount: 37.25,
+    totalInstallments: 4,
+    paidInstallmentsCount: 2,
+    remainingInstallmentsCount: 2,
+    planType: 'pix_monthly',
+    status: 'active',
+    startDate: '2026-08-01',
+    nextDueDate: '2026-10-05',
+    lastPaymentDate: '2026-09-02',
+    autoAccessRelease: true,
+    createdAt: '2026-08-01 10:15:00',
+    installments: [
+      {
+        id: 'inst_01_1',
+        installmentNumber: 1,
+        totalInstallments: 4,
+        amount: 37.25,
+        dueDate: '2026-08-01',
+        status: 'paid',
+        paidAt: '2026-08-01 10:18:22',
+        pixCopyPaste: '00020126580014BR.GOV.BCB.PIX0136matriculas@radbio.edu.br520400005303986540537.255802BR5916BIORAD CURSOS SA6009SAO PAULO62070503***6304D1A2',
+        pixEndToEndId: 'E9023955620260801101822A9F8B201',
+        receiptCode: 'REC-PIX-2026-8801'
+      },
+      {
+        id: 'inst_01_2',
+        installmentNumber: 2,
+        totalInstallments: 4,
+        amount: 37.25,
+        dueDate: '2026-09-01',
+        status: 'paid',
+        paidAt: '2026-09-02 14:10:05',
+        pixCopyPaste: '00020126580014BR.GOV.BCB.PIX0136matriculas@radbio.edu.br520400005303986540537.255802BR5916BIORAD CURSOS SA6009SAO PAULO62070503***6304E3B4',
+        pixEndToEndId: 'E9023955620260902141005C7D4E102',
+        receiptCode: 'REC-PIX-2026-9214'
+      },
+      {
+        id: 'inst_01_3',
+        installmentNumber: 3,
+        totalInstallments: 4,
+        amount: 37.25,
+        dueDate: '2026-10-05',
+        status: 'pending',
+        pixCopyPaste: '00020126580014BR.GOV.BCB.PIX0136matriculas@radbio.edu.br520400005303986540537.255802BR5916BIORAD CURSOS SA6009SAO PAULO62070503***6304F5C6',
+        receiptCode: 'REC-PIX-2026-P03'
+      },
+      {
+        id: 'inst_01_4',
+        installmentNumber: 4,
+        totalInstallments: 4,
+        amount: 37.25,
+        dueDate: '2026-11-05',
+        status: 'pending',
+        pixCopyPaste: '00020126580014BR.GOV.BCB.PIX0136matriculas@radbio.edu.br520400005303986540537.255802BR5916BIORAD CURSOS SA6009SAO PAULO62070503***6304A7D8',
+        receiptCode: 'REC-PIX-2026-P04'
+      }
+    ]
+  },
+  {
+    id: 'sub_02',
+    studentId: 'u_lucas',
+    studentName: 'Lucas Silveira Mendes',
+    studentEmail: 'lucas.silveira@aluno.radbio.edu.br',
+    studentCpf: '987.654.321-11',
+    studentAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=250&q=80',
+    courseId: 'cl_02',
+    courseTitle: 'Angiotomografia Cardíaca & Protocolos Coronarianos',
+    totalAmount: 179.00,
+    monthlyAmount: 59.66,
+    totalInstallments: 3,
+    paidInstallmentsCount: 3,
+    remainingInstallmentsCount: 0,
+    planType: 'pix_monthly',
+    status: 'completed',
+    startDate: '2026-07-10',
+    nextDueDate: undefined,
+    lastPaymentDate: '2026-09-10',
+    autoAccessRelease: true,
+    createdAt: '2026-07-10 09:20:00',
+    installments: [
+      {
+        id: 'inst_02_1',
+        installmentNumber: 1,
+        totalInstallments: 3,
+        amount: 59.66,
+        dueDate: '2026-07-10',
+        status: 'paid',
+        paidAt: '2026-07-10 09:25:00',
+        pixCopyPaste: '00020126580014BR.GOV.BCB.PIX0136matriculas@radbio.edu.br520400005303986540559.665802BR5916BIORAD CURSOS SA6009SAO PAULO62070503***6304C9F1',
+        pixEndToEndId: 'E9023955620260710092500A1B2C01',
+        receiptCode: 'REC-PIX-2026-7101'
+      },
+      {
+        id: 'inst_02_2',
+        installmentNumber: 2,
+        totalInstallments: 3,
+        amount: 59.66,
+        dueDate: '2026-08-10',
+        status: 'paid',
+        paidAt: '2026-08-10 11:45:10',
+        pixCopyPaste: '00020126580014BR.GOV.BCB.PIX0136matriculas@radbio.edu.br520400005303986540559.665802BR5916BIORAD CURSOS SA6009SAO PAULO62070503***6304D8E2',
+        pixEndToEndId: 'E9023955620260810114510B2C3D02',
+        receiptCode: 'REC-PIX-2026-8102'
+      },
+      {
+        id: 'inst_02_3',
+        installmentNumber: 3,
+        totalInstallments: 3,
+        amount: 59.68,
+        dueDate: '2026-09-10',
+        status: 'paid',
+        paidAt: '2026-09-10 16:30:40',
+        pixCopyPaste: '00020126580014BR.GOV.BCB.PIX0136matriculas@radbio.edu.br520400005303986540559.685802BR5916BIORAD CURSOS SA6009SAO PAULO62070503***6304E7F3',
+        pixEndToEndId: 'E9023955620260910163040C3D4E03',
+        receiptCode: 'REC-PIX-2026-9103'
+      }
+    ]
+  },
+  {
+    id: 'sub_03',
+    studentId: 'u_mariana',
+    studentName: 'Mariana Costa Sampaio',
+    studentEmail: 'mariana.costa@gmail.com',
+    studentCpf: '456.789.123-55',
+    studentAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=250&q=80',
+    courseId: 'cl_03',
+    courseTitle: 'Tomografia Computadorizada em Neurologia & AVC',
+    totalAmount: 179.00,
+    monthlyAmount: 29.83,
+    totalInstallments: 6,
+    paidInstallmentsCount: 1,
+    remainingInstallmentsCount: 5,
+    planType: 'pix_monthly',
+    status: 'active',
+    startDate: '2026-09-15',
+    nextDueDate: '2026-10-15',
+    lastPaymentDate: '2026-09-15',
+    autoAccessRelease: true,
+    createdAt: '2026-09-15 15:30:00',
+    installments: [
+      {
+        id: 'inst_03_1',
+        installmentNumber: 1,
+        totalInstallments: 6,
+        amount: 29.83,
+        dueDate: '2026-09-15',
+        status: 'paid',
+        paidAt: '2026-09-15 15:35:12',
+        pixCopyPaste: '00020126580014BR.GOV.BCB.PIX0136matriculas@radbio.edu.br520400005303986540529.835802BR5916BIORAD CURSOS SA6009SAO PAULO62070503***6304A1B2',
+        pixEndToEndId: 'E9023955620260915153512M1N2O01',
+        receiptCode: 'REC-PIX-2026-9501'
+      },
+      {
+        id: 'inst_03_2',
+        installmentNumber: 2,
+        totalInstallments: 6,
+        amount: 29.83,
+        dueDate: '2026-10-15',
+        status: 'pending',
+        pixCopyPaste: '00020126580014BR.GOV.BCB.PIX0136matriculas@radbio.edu.br520400005303986540529.835802BR5916BIORAD CURSOS SA6009SAO PAULO62070503***6304B2C3',
+        receiptCode: 'REC-PIX-2026-P02'
+      },
+      {
+        id: 'inst_03_3',
+        installmentNumber: 3,
+        totalInstallments: 6,
+        amount: 29.83,
+        dueDate: '2026-11-15',
+        status: 'pending',
+        pixCopyPaste: '00020126580014BR.GOV.BCB.PIX0136matriculas@radbio.edu.br520400005303986540529.835802BR5916BIORAD CURSOS SA6009SAO PAULO62070503***6304C3D4',
+        receiptCode: 'REC-PIX-2026-P03'
+      },
+      {
+        id: 'inst_03_4',
+        installmentNumber: 4,
+        totalInstallments: 6,
+        amount: 29.83,
+        dueDate: '2026-12-15',
+        status: 'pending',
+        pixCopyPaste: '00020126580014BR.GOV.BCB.PIX0136matriculas@radbio.edu.br520400005303986540529.835802BR5916BIORAD CURSOS SA6009SAO PAULO62070503***6304D4E5',
+        receiptCode: 'REC-PIX-2026-P04'
+      },
+      {
+        id: 'inst_03_5',
+        installmentNumber: 5,
+        totalInstallments: 6,
+        amount: 29.83,
+        dueDate: '2027-01-15',
+        status: 'pending',
+        pixCopyPaste: '00020126580014BR.GOV.BCB.PIX0136matriculas@radbio.edu.br520400005303986540529.835802BR5916BIORAD CURSOS SA6009SAO PAULO62070503***6304E5F6',
+        receiptCode: 'REC-PIX-2027-P05'
+      },
+      {
+        id: 'inst_03_6',
+        installmentNumber: 6,
+        totalInstallments: 6,
+        amount: 29.85,
+        dueDate: '2027-02-15',
+        status: 'pending',
+        pixCopyPaste: '00020126580014BR.GOV.BCB.PIX0136matriculas@radbio.edu.br520400005303986540529.855802BR5916BIORAD CURSOS SA6009SAO PAULO62070503***6304F6G7',
+        receiptCode: 'REC-PIX-2027-P06'
+      }
+    ]
+  },
+  {
+    id: 'sub_04',
+    studentId: 'u_carlos',
+    studentName: 'Carlos Eduardo Nogueira',
+    studentEmail: 'carlos.nogueira@aluno.radbio.edu.br',
+    studentCpf: '321.654.987-88',
+    studentAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=250&q=80',
+    courseId: 'cl_04',
+    courseTitle: 'Reconstruções 3D, MPR, MIP e Janelamento Hounsfield',
+    totalAmount: 149.00,
+    monthlyAmount: 37.25,
+    totalInstallments: 4,
+    paidInstallmentsCount: 1,
+    remainingInstallmentsCount: 3,
+    planType: 'pix_monthly',
+    status: 'active',
+    startDate: '2026-08-20',
+    nextDueDate: '2026-09-20',
+    lastPaymentDate: '2026-08-20',
+    autoAccessRelease: true,
+    createdAt: '2026-08-20 11:00:00',
+    installments: [
+      {
+        id: 'inst_04_1',
+        installmentNumber: 1,
+        totalInstallments: 4,
+        amount: 37.25,
+        dueDate: '2026-08-20',
+        status: 'paid',
+        paidAt: '2026-08-20 11:05:00',
+        pixCopyPaste: '00020126580014BR.GOV.BCB.PIX0136matriculas@radbio.edu.br520400005303986540537.255802BR5916BIORAD CURSOS SA6009SAO PAULO62070503***6304C1D2',
+        pixEndToEndId: 'E9023955620260820110500X1Y2Z01',
+        receiptCode: 'REC-PIX-2026-8201'
+      },
+      {
+        id: 'inst_04_2',
+        installmentNumber: 2,
+        totalInstallments: 4,
+        amount: 37.25,
+        dueDate: '2026-09-20',
+        status: 'overdue',
+        pixCopyPaste: '00020126580014BR.GOV.BCB.PIX0136matriculas@radbio.edu.br520400005303986540537.255802BR5916BIORAD CURSOS SA6009SAO PAULO62070503***6304D2E3',
+        receiptCode: 'REC-PIX-2026-P02'
+      },
+      {
+        id: 'inst_04_3',
+        installmentNumber: 3,
+        totalInstallments: 4,
+        amount: 37.25,
+        dueDate: '2026-10-20',
+        status: 'pending',
+        pixCopyPaste: '00020126580014BR.GOV.BCB.PIX0136matriculas@radbio.edu.br520400005303986540537.255802BR5916BIORAD CURSOS SA6009SAO PAULO62070503***6304E3F4',
+        receiptCode: 'REC-PIX-2026-P03'
+      },
+      {
+        id: 'inst_04_4',
+        installmentNumber: 4,
+        totalInstallments: 4,
+        amount: 37.25,
+        dueDate: '2026-11-20',
+        status: 'pending',
+        pixCopyPaste: '00020126580014BR.GOV.BCB.PIX0136matriculas@radbio.edu.br520400005303986540537.255802BR5916BIORAD CURSOS SA6009SAO PAULO62070503***6304F4G5',
+        receiptCode: 'REC-PIX-2026-P04'
+      }
+    ]
+  }
+];
 
 export const initialAuditLogs: AuditLog[] = [
   {
@@ -937,13 +1223,177 @@ export const storageService = {
   getPaymentTransactions(): PaymentTransaction[] {
     const data = safeGetItem(KEYS.PAYMENTS);
     if (!data) {
-      return [];
+      const initialTxs: PaymentTransaction[] = [
+        {
+          id: 'tx_card_01',
+          transactionCode: 'CARD-6X-88219401',
+          courseId: 'cl_01',
+          courseTitle: 'Tomografia Computadorizada Clínica & Operação do Activion 16',
+          studentName: 'Beatriz Ramos Ferreira',
+          studentEmail: 'beatriz.ramos@aluno.radbio.edu.br',
+          studentCpf: '123.456.789-00',
+          amount: 149.00,
+          paymentMethod: 'credit',
+          installments: 6,
+          cardBrand: 'mastercard',
+          cardLast4: '4820',
+          status: 'completed',
+          createdAt: '2026-09-28 14:20:15',
+          paidAt: '2026-09-28 14:20:18',
+          certificateWorkloadHours: 40,
+          accessPeriodDays: 60,
+          expiresAt: '2026-11-28'
+        },
+        {
+          id: 'tx_card_02',
+          transactionCode: 'CARD-12X-99412085',
+          courseId: 'cl_02',
+          courseTitle: 'Angiotomografia Cardíaca & Protocolos Coronarianos',
+          studentName: 'Lucas Silveira Mendes',
+          studentEmail: 'lucas.silveira@aluno.radbio.edu.br',
+          studentCpf: '987.654.321-11',
+          amount: 179.00,
+          paymentMethod: 'credit',
+          installments: 12,
+          cardBrand: 'visa',
+          cardLast4: '9012',
+          status: 'completed',
+          createdAt: '2026-09-29 10:15:30',
+          paidAt: '2026-09-29 10:15:35',
+          certificateWorkloadHours: 40,
+          accessPeriodDays: 60,
+          expiresAt: '2026-11-29'
+        },
+        {
+          id: 'tx_card_03',
+          transactionCode: 'CARD-3X-77148922',
+          courseId: 'cl_03',
+          courseTitle: 'Tomografia Computadorizada em Neurologia & AVC',
+          studentName: 'Mariana Costa Sampaio',
+          studentEmail: 'mariana.costa@gmail.com',
+          studentCpf: '456.789.123-55',
+          amount: 179.00,
+          paymentMethod: 'credit',
+          installments: 3,
+          cardBrand: 'elo',
+          cardLast4: '3841',
+          status: 'pending',
+          createdAt: '2026-10-01 16:45:10',
+          certificateWorkloadHours: 40,
+          accessPeriodDays: 60,
+          expiresAt: '2026-12-01'
+        },
+        {
+          id: 'tx_card_04',
+          transactionCode: 'CARD-4X-66109314',
+          courseId: 'cl_04',
+          courseTitle: 'Reconstruções 3D, MPR, MIP e Janelamento Hounsfield',
+          studentName: 'Carlos Eduardo Nogueira',
+          studentEmail: 'carlos.nogueira@aluno.radbio.edu.br',
+          studentCpf: '321.654.987-88',
+          amount: 149.00,
+          paymentMethod: 'credit',
+          installments: 4,
+          cardBrand: 'hipercard',
+          cardLast4: '7104',
+          status: 'refunded',
+          createdAt: '2026-09-20 11:30:00',
+          paidAt: '2026-09-20 11:30:05',
+          refundedAt: '2026-09-22 09:15:00',
+          refundReason: 'Solicitação de cancelamento pelo titular dentro do prazo de 7 dias (CDC Art. 49).',
+          refundTransactionId: 'REF-ESTORNO-9814',
+          certificateWorkloadHours: 40,
+          accessPeriodDays: 60,
+          expiresAt: '2026-11-20'
+        },
+        {
+          id: 'tx_card_05',
+          transactionCode: 'CARD-1X-55198204',
+          courseId: 'cl_01',
+          courseTitle: 'Tomografia Computadorizada Clínica & Operação do Activion 16',
+          studentName: 'Camila Albuquerque Lima',
+          studentEmail: 'camila.albuquerque@gmail.com',
+          studentCpf: '654.987.321-44',
+          amount: 149.00,
+          paymentMethod: 'credit',
+          installments: 1,
+          cardBrand: 'amex',
+          cardLast4: '2019',
+          status: 'completed',
+          createdAt: '2026-10-01 08:20:00',
+          paidAt: '2026-10-01 08:20:04',
+          certificateWorkloadHours: 40,
+          accessPeriodDays: 60,
+          expiresAt: '2026-12-01'
+        },
+        {
+          id: 'tx_pix_01',
+          transactionCode: 'PIX-OK-44182905',
+          courseId: 'cl_01',
+          courseTitle: 'Tomografia Computadorizada Clínica & Operação do Activion 16',
+          studentName: 'Roberto Alencar Filho',
+          studentEmail: 'roberto.alencar@radbio.edu.br',
+          studentCpf: '789.123.456-99',
+          amount: 149.00,
+          paymentMethod: 'pix',
+          pixEndToEndId: 'E9023955620261001142010BCB8912',
+          status: 'completed',
+          createdAt: '2026-10-01 14:20:10',
+          paidAt: '2026-10-01 14:20:12',
+          certificateWorkloadHours: 40,
+          accessPeriodDays: 60,
+          expiresAt: '2026-12-01'
+        }
+      ];
+      safeSetItem(KEYS.PAYMENTS, JSON.stringify(initialTxs));
+      return initialTxs;
     }
     try {
       return JSON.parse(data);
     } catch {
       return [];
     }
+  },
+
+  updatePaymentTransactionStatus(txId: string, status: 'pending' | 'approved' | 'completed' | 'refunded', reason?: string): { success: boolean; message: string } {
+    const list = this.getPaymentTransactions();
+    const index = list.findIndex(t => t.id === txId || t.transactionCode === txId);
+    if (index === -1) {
+      return { success: false, message: 'Transação não encontrada.' };
+    }
+
+    const nowStr = new Date().toISOString().replace('T', ' ').slice(0, 19);
+    list[index].status = status;
+    if (status === 'refunded') {
+      list[index].refundedAt = nowStr;
+      list[index].refundReason = reason || 'Estorno solicitado pela administração geral.';
+      list[index].refundTransactionId = `REF-${Date.now().toString().slice(-6)}`;
+    } else if (status === 'completed' || status === 'approved') {
+      list[index].paidAt = nowStr;
+    }
+
+    safeSetItem(KEYS.PAYMENTS, JSON.stringify(list));
+    syncToSupabaseAsync('radbio_payments', list[index].id, list[index]);
+
+    this.addAuditLog({
+      id: `log_tx_${Date.now()}`,
+      action: 'payment_processed',
+      actionTitle: `Atualização de Transação: ${status.toUpperCase()}`,
+      description: `Transação ${list[index].transactionCode} alterada para ${status}. ${reason ? 'Motivo: ' + reason : ''}`,
+      userId: 'u_admin',
+      userName: 'Administrador Geral',
+      userEmail: 'admin@biorad.edu.br',
+      userRole: 'admin',
+      ipAddress: '127.0.0.1',
+      device: 'Console Financeiro',
+      timestamp: nowStr,
+      dateIso: nowStr.slice(0, 10),
+      targetResource: `Transação ${list[index].transactionCode}`,
+      status: status === 'refunded' ? 'warning' : 'success'
+    });
+
+    window.dispatchEvent(new CustomEvent('radbio_state_changed'));
+    return { success: true, message: `Status da transação atualizado para "${status}" com sucesso!` };
   },
 
   savePaymentTransaction(tx: PaymentTransaction): void {
@@ -1134,5 +1584,139 @@ export const storageService = {
   clearAuditLogs(): void {
     safeSetItem(KEYS.AUDIT_LOGS, JSON.stringify([]));
     window.dispatchEvent(new CustomEvent('radbio_state_changed'));
+  },
+
+  getStudentSubscriptions(): StudentMonthlySubscription[] {
+    const data = safeGetItem(KEYS.STUDENT_SUBSCRIPTIONS);
+    if (!data) {
+      safeSetItem(KEYS.STUDENT_SUBSCRIPTIONS, JSON.stringify(initialStudentSubscriptions));
+      return initialStudentSubscriptions;
+    }
+    try {
+      return JSON.parse(data) as StudentMonthlySubscription[];
+    } catch {
+      return initialStudentSubscriptions;
+    }
+  },
+
+  saveStudentSubscriptions(subs: StudentMonthlySubscription[]): void {
+    safeSetItem(KEYS.STUDENT_SUBSCRIPTIONS, JSON.stringify(subs));
+    window.dispatchEvent(new CustomEvent('radbio_state_changed'));
+  },
+
+  addStudentSubscription(sub: StudentMonthlySubscription): void {
+    const list = this.getStudentSubscriptions();
+    const existingIdx = list.findIndex(s => s.id === sub.id);
+    if (existingIdx >= 0) {
+      list[existingIdx] = sub;
+    } else {
+      list.unshift(sub);
+    }
+    this.saveStudentSubscriptions(list);
+  },
+
+  updateStudentSubscription(sub: StudentMonthlySubscription): void {
+    const list = this.getStudentSubscriptions();
+    const index = list.findIndex(s => s.id === sub.id);
+    if (index >= 0) {
+      list[index] = sub;
+      this.saveStudentSubscriptions(list);
+    }
+  },
+
+  payInstallment(subscriptionId: string, installmentNumber: number, customEndToEndId?: string): { success: boolean; message: string; transaction?: PaymentTransaction } {
+    const list = this.getStudentSubscriptions();
+    const subIndex = list.findIndex(s => s.id === subscriptionId);
+    if (subIndex === -1) {
+      return { success: false, message: 'Assinatura/plano de parcelamento não localizado.' };
+    }
+
+    const subscription = list[subIndex];
+    const instIndex = subscription.installments.findIndex((i: PixInstallment) => i.installmentNumber === installmentNumber);
+    if (instIndex === -1) {
+      return { success: false, message: 'Parcela informada não encontrada no cronograma.' };
+    }
+
+    const installment = subscription.installments[instIndex];
+    if (installment.status === 'paid') {
+      return { success: false, message: 'Esta parcela já consta como Paga e Compensada.' };
+    }
+
+    const now = new Date();
+    const paidAtStr = now.toISOString().replace('T', ' ').slice(0, 19);
+    const endToEnd = customEndToEndId || `E90239556${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}${Date.now().toString().slice(-8)}`;
+    const receipt = `REC-PIX-${now.getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    installment.status = 'paid';
+    installment.paidAt = paidAtStr;
+    installment.pixEndToEndId = endToEnd;
+    installment.receiptCode = receipt;
+
+    // Recalculate counts
+    const paidCount = subscription.installments.filter((i: PixInstallment) => i.status === 'paid').length;
+    const remainingCount = subscription.installments.length - paidCount;
+    subscription.paidInstallmentsCount = paidCount;
+    subscription.remainingInstallmentsCount = remainingCount;
+    subscription.lastPaymentDate = paidAtStr.slice(0, 10);
+
+    // Update nextDueDate to next pending installment
+    const nextPending = subscription.installments.find((i: PixInstallment) => i.status === 'pending' || i.status === 'overdue');
+    subscription.nextDueDate = nextPending ? nextPending.dueDate : undefined;
+
+    if (remainingCount === 0) {
+      subscription.status = 'completed';
+    } else {
+      subscription.status = 'active';
+    }
+
+    list[subIndex] = subscription;
+    this.saveStudentSubscriptions(list);
+
+    // Register transaction record
+    const tx: PaymentTransaction = {
+      id: `tx_${Date.now()}`,
+      transactionCode: `PIX-PARC-${subscription.totalInstallments}X-${receipt}`,
+      courseId: subscription.courseId,
+      courseTitle: `${subscription.courseTitle} (Parcela ${installmentNumber}/${subscription.totalInstallments})`,
+      studentName: subscription.studentName,
+      studentEmail: subscription.studentEmail,
+      studentCpf: subscription.studentCpf,
+      amount: installment.amount,
+      paymentMethod: 'pix',
+      planType: 'pix_monthly',
+      installmentNumber,
+      totalInstallments: subscription.totalInstallments,
+      subscriptionId: subscription.id,
+      pixEndToEndId: endToEnd,
+      pixQrCodeString: installment.pixCopyPaste,
+      status: 'completed',
+      createdAt: paidAtStr,
+      paidAt: paidAtStr,
+      certificateWorkloadHours: 40,
+      accessPeriodDays: 60,
+      enrolledAt: paidAtStr
+    };
+
+    this.savePaymentTransaction(tx);
+
+    // Record audit log
+    this.addAuditLog({
+      id: `log_pix_${Date.now()}`,
+      action: 'payment_processed',
+      actionTitle: `Compensação de Parcela PIX (${installmentNumber}/${subscription.totalInstallments})`,
+      description: `Pagamento de R$ ${installment.amount.toFixed(2)} confirmado para ${subscription.studentName}. Recibo: ${receipt}.`,
+      userId: subscription.studentId,
+      userName: subscription.studentName,
+      userEmail: subscription.studentEmail,
+      userRole: 'student',
+      ipAddress: '177.38.102.64',
+      device: 'PIX Instantâneo BACEN',
+      timestamp: paidAtStr,
+      dateIso: paidAtStr.slice(0, 10),
+      targetResource: `Mensalidade ${subscription.courseTitle}`,
+      status: 'success'
+    });
+
+    return { success: true, message: `✓ Parcela ${installmentNumber}/${subscription.totalInstallments} (R$ ${installment.amount.toFixed(2)}) compensada com sucesso!`, transaction: tx };
   }
 };
