@@ -13,7 +13,8 @@ export const adminUserBen: User = {
   totalRequiredHours: 500,
   attendanceRate: 100,
   status: 'honor',
-  password: '123'
+  password: '123',
+  enrolledCourses: ['course_tc_701', 'course_rm_802', 'course_rx_304', 'course_prot_510', 'cl_radioprotecao_40h', 'cl_01', 'cl_02', 'cl_03', 'cl_04']
 };
 
 export const studentLucas: User = {
@@ -33,7 +34,8 @@ export const studentLucas: User = {
   totalRequiredHours: 180,
   attendanceRate: 94,
   status: 'regular',
-  password: '123'
+  password: '123',
+  enrolledCourses: ['course_tc_701', 'course_rm_802', 'cl_radioprotecao_40h']
 };
 
 export const initialCurrentUser: User = adminUserBen;

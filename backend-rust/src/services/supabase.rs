@@ -147,4 +147,54 @@ impl SupabaseService {
             Ok(None)
         }
     }
+
+    /// Upsert payment transaction in Supabase `radbio_payments` table
+    pub async fn upsert_payment_record(&self, payment_record: &Value) -> Result<bool, reqwest::Error> {
+        let url = format!("{}/rest/v1/radbio_payments", self.config.supabase_url);
+        let resp = self.client
+            .post(&url)
+            .header("Prefer", "resolution=merge-duplicates")
+            .json(payment_record)
+            .send()
+            .await?;
+        Ok(resp.status().is_success() || resp.status().as_u16() == 201)
+    }
+
+    /// Release student enrollment in course with 60 days access
+    pub async fn enroll_student_in_course_livre(
+        &self,
+        student_email: &str,
+        course_id: &str,
+        course_title: &str,
+        payment_id: &str,
+    ) -> Result<bool, reqwest::Error> {
+        let now = chrono::Utc::now();
+        let expires = now + chrono::Duration::days(60);
+
+        let enrollment_record = json!({
+            "id": format!("enroll_{}_{}", student_email.replace('@', "_").replace('.', "_"), course_id),
+            "data": {
+                "studentEmail": student_email,
+                "courseId": course_id,
+                "courseTitle": course_title,
+                "isEnrolled": true,
+                "enrolledAt": now.to_rfc3339(),
+                "expiresAt": expires.to_rfc3339(),
+                "accessPeriodDays": 60,
+                "certificateWorkloadHours": 40,
+                "paymentTransactionId": payment_id,
+                "status": "active"
+            }
+        });
+
+        let url = format!("{}/rest/v1/radbio_cursos_livres", self.config.supabase_url);
+        let resp = self.client
+            .post(&url)
+            .header("Prefer", "resolution=merge-duplicates")
+            .json(&enrollment_record)
+            .send()
+            .await?;
+
+        Ok(resp.status().is_success() || resp.status().as_u16() == 201)
+    }
 }

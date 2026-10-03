@@ -21,8 +21,13 @@ Estrutura de microserviço back-end em **Rust** de alta performance e baixo cons
 | `GET` | `/health` | Healthcheck do servidor |
 | `POST` | `/api/auth/login` | Autenticação de usuários e emissão de JWT |
 | `POST` | `/api/auth/register` | Cadastro de novos alunos e discentes |
+| `POST` | `/api/payments/checkout` | Processa pagamento PIX e Cartão de Crédito em até 6x via Mercado Pago |
+| `POST/GET` | `/api/payments/webhook` | Webhook IPN Mercado Pago para liberação automática de matrícula e acesso |
 | `GET` | `/api/courses` | Listagem de todos os cursos 40h |
 | `GET` | `/api/courses/:id` | Detalhes de um curso por ID ou código |
+| `GET` | `/api/courses/:course_id/verify-access` | Verifica se o aluno logado possui matrícula ativa no curso |
+| `GET` | `/api/courses/:course_id/lessons` | Retorna as videoaulas do curso (Retorna **403 Forbidden** se o aluno não comprou) |
+| `GET` | `/api/courses/:course_id/lessons/:lesson_id` | Retorna os detalhes e streaming da aula com validação de matrícula |
 | `POST` | `/api/courses` | Criação/atualização de disciplina |
 | `GET` | `/api/certificates/verify/:code` | Validação oficial de certificados com QR Code |
 | `GET` | `/api/audit-logs` | Consulta paginada com filtros por data e usuário |

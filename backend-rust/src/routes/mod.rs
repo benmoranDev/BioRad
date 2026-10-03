@@ -1,5 +1,6 @@
 pub mod auth;
 pub mod courses;
+pub mod lessons;
 pub mod certificates;
 pub mod audit;
 pub mod payments;
@@ -24,6 +25,7 @@ pub fn create_router(state: AppState) -> Router {
         
         // Payments & Mercado Pago Checkout Routes
         .route("/api/payments/checkout", post(payments::process_checkout_handler))
+        .route("/api/payments/webhook", post(payments::mercadopago_webhook_handler).get(payments::mercadopago_webhook_handler))
         
         // Course Management Routes (sqlx CRUD)
         .route(
@@ -36,6 +38,11 @@ pub fn create_router(state: AppState) -> Router {
                 .put(courses::update_course_handler)
                 .delete(courses::delete_course_handler),
         )
+        .route("/api/courses/:course_id/verify-access", get(lessons::check_course_access_handler))
+        
+        // Lesson Access Validation Routes (403 Forbidden for non-enrolled students)
+        .route("/api/courses/:course_id/lessons", get(lessons::get_course_lessons_handler))
+        .route("/api/courses/:course_id/lessons/:lesson_id", get(lessons::get_single_lesson_handler))
         
         // Certificate Validation
         .route("/api/certificates/verify/:code", get(certificates::verify_certificate_handler))

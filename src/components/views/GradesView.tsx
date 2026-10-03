@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Course, ThemeMode } from '../../types';
+import { Course, ThemeMode, User } from '../../types';
 import { pdfExportService } from '../../services/pdfExport';
 
 interface GradesViewProps {
@@ -8,6 +8,8 @@ interface GradesViewProps {
   enrollmentId: string;
   onRequestReview: () => void;
   onValidateAuthenticity: () => void;
+  currentUser?: User;
+  onShowToast?: (msg: string) => void;
   theme?: ThemeMode;
 }
 
@@ -17,9 +19,12 @@ export const GradesView: React.FC<GradesViewProps> = ({
   enrollmentId,
   onRequestReview,
   onValidateAuthenticity,
+  currentUser,
+  onShowToast,
   theme = 'dark'
 }) => {
   const [expandedRow, setExpandedRow] = useState<string | null>('row-tc');
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const isDark = theme === 'dark';
 
   const toggleRow = (id: string) => {
@@ -27,7 +32,25 @@ export const GradesView: React.FC<GradesViewProps> = ({
   };
 
   const handleExportPdf = () => {
-    pdfExportService.exportTranscript(courses, studentName, enrollmentId);
+    setIsExportingPdf(true);
+    try {
+      pdfExportService.exportBoletimPdf(courses, studentName, enrollmentId, {
+        cpf: currentUser?.cpf,
+        courseName: currentUser?.courseName || currentUser?.specialty,
+        gpa: currentUser?.gpa,
+        attendanceRate: currentUser?.attendanceRate,
+        completedHours: currentUser?.completedHours,
+        totalRequiredHours: currentUser?.totalRequiredHours,
+        status: currentUser?.status
+      });
+      if (onShowToast) {
+        onShowToast('Boletim acadêmico em PDF gerado e pronto para impressão!');
+      }
+    } catch (err) {
+      console.error('Falha ao exportar boletim em PDF:', err);
+    } finally {
+      setTimeout(() => setIsExportingPdf(false), 800);
+    }
   };
 
   return (
@@ -74,12 +97,23 @@ export const GradesView: React.FC<GradesViewProps> = ({
           <button
             type="button"
             onClick={handleExportPdf}
-            className="px-5 py-2.5 rounded-full text-[#090d16] font-bold text-xs bg-gradient-to-r from-[#06b6d4] to-[#0891b2] hover:shadow-[0_0_24px_rgba(6,182,212,0.6)] shadow-lg shadow-[#06b6d4]/30 flex items-center gap-2 transition-all cursor-pointer transform hover:-translate-y-0.5"
+            disabled={isExportingPdf}
+            className={`px-5 py-2.5 rounded-full text-[#090d16] font-bold text-xs bg-gradient-to-r from-[#06b6d4] to-[#0891b2] hover:shadow-[0_0_24px_rgba(6,182,212,0.6)] shadow-lg shadow-[#06b6d4]/30 flex items-center gap-2 transition-all cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0 ${
+              isExportingPdf ? 'opacity-80 cursor-wait' : ''
+            }`}
+            title="Exportar boletim em documento PDF formatado pronto para impressão"
           >
-            <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>
-              verified
-            </span>
-            <span>Exportar Histórico Escolar (PDF Oficial)</span>
+            {isExportingPdf ? (
+              <>
+                <span className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                <span>Gerando PDF...</span>
+              </>
+            ) : (
+              <>
+                <span className="material-symbols-outlined text-lg">picture_as_pdf</span>
+                <span>Exportar em PDF</span>
+              </>
+            )}
           </button>
         </div>
       </section>
@@ -603,18 +637,29 @@ export const GradesView: React.FC<GradesViewProps> = ({
             </p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={onValidateAuthenticity}
-          className={`px-4 py-2 rounded-xl border text-xs font-semibold flex items-center gap-2 whitespace-nowrap transition-all cursor-pointer ${
-            isDark
-              ? 'bg-white/[0.04] hover:bg-white/[0.08] text-[#4cd7f6] border-[#4cd7f6]/30'
-              : 'bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border-cyan-300'
-          }`}
-        >
-          <span className="material-symbols-outlined text-base">qr_code_scanner</span>
-          <span>Validar Registro</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handleExportPdf}
+            disabled={isExportingPdf}
+            className="px-4 py-2 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/40 text-cyan-400 font-semibold text-xs flex items-center gap-2 whitespace-nowrap transition-all cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-base">picture_as_pdf</span>
+            <span>Exportar em PDF</span>
+          </button>
+          <button
+            type="button"
+            onClick={onValidateAuthenticity}
+            className={`px-4 py-2 rounded-xl border text-xs font-semibold flex items-center gap-2 whitespace-nowrap transition-all cursor-pointer ${
+              isDark
+                ? 'bg-white/[0.04] hover:bg-white/[0.08] text-[#4cd7f6] border-[#4cd7f6]/30'
+                : 'bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border-cyan-300'
+            }`}
+          >
+            <span className="material-symbols-outlined text-base">qr_code_scanner</span>
+            <span>Validar Registro</span>
+          </button>
+        </div>
       </div>
     </div>
   );

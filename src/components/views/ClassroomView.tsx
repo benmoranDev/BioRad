@@ -107,6 +107,52 @@ export const ClassroomView: React.FC<ClassroomViewProps> = ({
     );
   }
 
+  // If student has no enrolled courses at all
+  if (currentUser?.role === 'student' && courses.length === 0) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto space-y-6 animate-fade-in my-6">
+        <div className={`p-8 sm:p-12 rounded-[36px] border text-center space-y-6 shadow-2xl backdrop-blur-2xl ${
+          isDark ? 'bg-[#141b2e]/90 border-cyan-500/40 text-white' : 'bg-white border-cyan-300 text-slate-900 shadow-xl'
+        }`}>
+          <div className="w-20 h-20 mx-auto rounded-3xl bg-cyan-500/20 border-2 border-cyan-500/50 flex items-center justify-center text-cyan-400 shadow-xl shadow-cyan-500/20">
+            <span className="material-symbols-outlined text-4xl">lock</span>
+          </div>
+
+          <div className="space-y-2">
+            <span className="px-3.5 py-1 rounded-full text-xs font-mono font-bold uppercase bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+              Matrícula Necessária
+            </span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold font-['Plus_Jakarta_Sans']">
+              Sala de Aula Bloqueada
+            </h1>
+            <p className={`text-xs sm:text-sm max-w-xl mx-auto leading-relaxed ${isDark ? 'text-gray-300' : 'text-slate-600'}`}>
+              Você ainda não possui nenhum curso ativo. Escolha um dos nossos cursos livres de 40 horas no catálogo ou adquira o acesso para desbloquear videoaulas, casos clínicos DICOM reais e o Simulador Canon Activion 16.
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => onNavigateTab?.('cursos_livres')}
+              className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-gradient-to-r from-cyan-500 to-teal-400 text-slate-950 font-bold text-xs shadow-lg shadow-cyan-500/25 hover:scale-105 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-base">explore</span>
+              <span>Explorar Catálogo de Cursos (40h)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigateTab?.('pagamentos')}
+              className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/25 hover:scale-105 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-base">shopping_cart_checkout</span>
+              <span>Ir para Checkout / Pagamentos</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Active Course state
   const [selectedCourseId, setSelectedCourseId] = useState<string>(() => {
     return activeLesson.courseId || courses[0]?.id || 'course_tc_701';

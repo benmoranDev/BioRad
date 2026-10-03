@@ -28,6 +28,8 @@ pub struct UserProfile {
     pub status: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub expires_at: Option<String>,
+    #[serde(default)]
+    pub enrolled_courses: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -44,6 +46,7 @@ pub struct RegisterRequest {
     pub role: Option<UserRole>,
     pub cpf: Option<String>,
     pub specialty: Option<String>,
+    pub enrolled_courses: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -167,4 +170,15 @@ pub struct Claims {
     pub role: String,
     pub exp: usize,
     pub iat: usize,
+    #[serde(default)]
+    pub enrolled_courses: Option<Vec<String>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CourseAccessCheckResponse {
+    pub allowed: bool,
+    pub course_id: String,
+    pub user_id: String,
+    pub user_role: String,
+    pub reason: String,
 }

@@ -775,71 +775,97 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
             {/* Courses Cards List */}
             <div className="space-y-4">
-              {filteredCourses.map(course => (
-                <div
-                  key={course.id}
-                  className={`p-5 rounded-[28px] border transition-all duration-300 space-y-3.5 ${
-                    isDark
-                      ? 'bg-[#0a0e17]/55 border-white/5 hover:border-[#4cd7f6]/40 hover:bg-[#0a0e17]/80'
-                      : 'bg-slate-50/70 border-slate-200 hover:border-cyan-300 hover:bg-slate-50'
-                  }`}
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-mono font-bold text-cyan-500 uppercase tracking-wider">
-                        {course.category}
-                      </span>
-                      <h3 className="text-sm sm:text-base font-bold font-['Plus_Jakarta_Sans']">
-                        {course.title}
-                      </h3>
-                      <p className={`text-xs ${isDark ? 'text-[#bcc9cd]' : 'text-slate-500'}`}>
-                        Código: {course.code} • {course.credits} Créditos • Docente: {course.instructor}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-600 border border-emerald-500/30">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                        {course.progress > 80 ? 'Excelente' : 'Em Dia'}
-                      </span>
-                      <span className={`px-2.5 py-0.5 rounded-full font-mono text-xs font-bold ${isDark ? 'bg-[#1c1f29] text-white' : 'bg-white text-slate-800 border border-slate-200'}`}>
-                        Média: {course.grade.toFixed(1)}
-                      </span>
-                    </div>
+              {filteredCourses.length === 0 ? (
+                <div className={`p-8 sm:p-10 rounded-[28px] border text-center space-y-4 ${
+                  isDark ? 'bg-[#0a0e17]/50 border-white/10' : 'bg-slate-50 border-slate-200'
+                }`}>
+                  <div className="w-16 h-16 rounded-3xl bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 flex items-center justify-center mx-auto text-3xl shadow-lg">
+                    <span className="material-symbols-outlined text-3xl">school</span>
                   </div>
-
-                  {/* Progress bar */}
-                  <div className="space-y-1.5 pt-1">
-                    <div className="flex justify-between text-xs">
-                      <span className={isDark ? 'text-[#bcc9cd]' : 'text-slate-500'}>
-                        Módulo {course.currentModule} de {course.totalModules} concluído
-                      </span>
-                      <span className="font-mono text-cyan-500 font-bold">{course.progress}%</span>
-                    </div>
-                    <div className={`w-full rounded-full h-2 overflow-hidden ${isDark ? 'bg-[#31353f]' : 'bg-slate-200'}`}>
-                      <div
-                        className="bg-gradient-to-r from-cyan-500 to-emerald-400 h-full rounded-full transition-all duration-500"
-                        style={{ width: `${course.progress}%` }}
-                      />
-                    </div>
+                  <div className="space-y-1.5 max-w-md mx-auto">
+                    <h3 className="text-base sm:text-lg font-bold">Nenhum Curso Ativo no Momento</h3>
+                    <p className={`text-xs leading-relaxed ${isDark ? 'text-gray-400' : 'text-slate-600'}`}>
+                      Você ainda não possui disciplinas ou cursos de 40 horas liberados. Explore nosso catálogo com Simulador Canon Activion 16 e matricule-se com liberação instantânea via PIX ou Cartão em até 6x!
+                    </p>
                   </div>
-
-                  {course.nextDeadline && (
-                    <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-200/20">
-                      <span className={`flex items-center gap-1 truncate ${isDark ? 'text-[#bcc9cd]' : 'text-slate-600'}`}>
-                        <span className="material-symbols-outlined text-xs text-amber-500">event_upcoming</span>
-                        Próximo Trabalho: <strong>{course.nextDeliveryTitle}</strong> ({course.nextDeadline})
-                      </span>
-                      <button
-                        onClick={() => onNavigateTab('aulas')}
-                        className="text-cyan-600 hover:text-cyan-700 font-semibold shrink-0 ml-2"
-                      >
-                        Acessar Aula →
-                      </button>
-                    </div>
-                  )}
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={() => onNavigateTab('cursos_livres')}
+                      className="px-6 py-3 rounded-full bg-gradient-to-r from-cyan-500 to-teal-400 text-slate-950 font-bold text-xs shadow-lg shadow-cyan-500/25 hover:scale-105 transition-all inline-flex items-center gap-2 cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-base">explore</span>
+                      <span>Explorar Catálogo de Cursos (40h)</span>
+                    </button>
+                  </div>
                 </div>
-              ))}
+              ) : (
+                filteredCourses.map(course => (
+                  <div
+                    key={course.id}
+                    className={`p-5 rounded-[28px] border transition-all duration-300 space-y-3.5 ${
+                      isDark
+                        ? 'bg-[#0a0e17]/55 border-white/5 hover:border-[#4cd7f6]/40 hover:bg-[#0a0e17]/80'
+                        : 'bg-slate-50/70 border-slate-200 hover:border-cyan-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-mono font-bold text-cyan-500 uppercase tracking-wider">
+                          {course.category}
+                        </span>
+                        <h3 className="text-sm sm:text-base font-bold font-['Plus_Jakarta_Sans']">
+                          {course.title}
+                        </h3>
+                        <p className={`text-xs ${isDark ? 'text-[#bcc9cd]' : 'text-slate-500'}`}>
+                          Código: {course.code} • {course.credits} Créditos • Docente: {course.instructor}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-600 border border-emerald-500/30">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          {course.progress > 80 ? 'Excelente' : 'Em Dia'}
+                        </span>
+                        <span className={`px-2.5 py-0.5 rounded-full font-mono text-xs font-bold ${isDark ? 'bg-[#1c1f29] text-white' : 'bg-white text-slate-800 border border-slate-200'}`}>
+                          Média: {course.grade.toFixed(1)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Progress bar */}
+                    <div className="space-y-1.5 pt-1">
+                      <div className="flex justify-between text-xs">
+                        <span className={isDark ? 'text-[#bcc9cd]' : 'text-slate-500'}>
+                          Módulo {course.currentModule} de {course.totalModules} concluído
+                        </span>
+                        <span className="font-mono text-cyan-500 font-bold">{course.progress}%</span>
+                      </div>
+                      <div className={`w-full rounded-full h-2 overflow-hidden ${isDark ? 'bg-[#31353f]' : 'bg-slate-200'}`}>
+                        <div
+                          className="bg-gradient-to-r from-cyan-500 to-emerald-400 h-full rounded-full transition-all duration-500"
+                          style={{ width: `${course.progress}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {course.nextDeadline && (
+                      <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-200/20">
+                        <span className={`flex items-center gap-1 truncate ${isDark ? 'text-[#bcc9cd]' : 'text-slate-600'}`}>
+                          <span className="material-symbols-outlined text-xs text-amber-500">event_upcoming</span>
+                          Próximo Trabalho: <strong>{course.nextDeliveryTitle}</strong> ({course.nextDeadline})
+                        </span>
+                        <button
+                          onClick={() => onNavigateTab('aulas')}
+                          className="text-cyan-600 hover:text-cyan-700 font-semibold shrink-0 ml-2"
+                        >
+                          Acessar Aula →
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

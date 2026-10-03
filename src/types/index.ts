@@ -27,6 +27,7 @@ export interface User {
   expiresAt?: string;
   accessPeriodDays?: number;
   isAccessExpired?: boolean;
+  enrolledCourses?: string[]; // IDs of courses the student has purchased and has active access to
 }
 
 export interface AuthSession {
@@ -118,6 +119,7 @@ export interface Lesson {
   resources?: LessonResource[];
   quizQuestions?: LessonQuizQuestion[];
   studentNotes?: LessonNote[];
+  isFreePreview?: boolean;
 }
 
 export interface TaskPendency {

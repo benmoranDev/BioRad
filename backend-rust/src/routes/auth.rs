@@ -61,6 +61,7 @@ pub async fn login_handler(
         },
         exp: now + expires_in_seconds,
         iat: now,
+        enrolled_courses: user_profile.enrolled_courses.clone(),
     };
 
     let token = match encode(
@@ -215,6 +216,7 @@ pub async fn register_handler(
         attendance_rate: 100.0,
         status: "regular".to_string(),
         expires_at: Some("2026-11-30".to_string()),
+        enrolled_courses: payload.enrolled_courses.or(Some(vec![])),
     };
 
     // Upsert into Supabase `users` table
@@ -250,6 +252,17 @@ fn resolve_default_profile(email: &str) -> UserProfile {
             attendance_rate: 100.0,
             status: "regular".to_string(),
             expires_at: None,
+            enrolled_courses: Some(vec![
+                "course_tc_701".to_string(),
+                "course_rm_802".to_string(),
+                "course_rx_304".to_string(),
+                "course_prot_510".to_string(),
+                "cl_radioprotecao_40h".to_string(),
+                "cl_01".to_string(),
+                "cl_02".to_string(),
+                "cl_03".to_string(),
+                "cl_04".to_string(),
+            ]),
         }
     } else if lower.contains("marcus") || lower.contains("prof") {
         UserProfile {
@@ -267,6 +280,12 @@ fn resolve_default_profile(email: &str) -> UserProfile {
             attendance_rate: 100.0,
             status: "regular".to_string(),
             expires_at: None,
+            enrolled_courses: Some(vec![
+                "course_tc_701".to_string(),
+                "course_rm_802".to_string(),
+                "course_rx_304".to_string(),
+                "course_prot_510".to_string(),
+            ]),
         }
     } else {
         UserProfile {
@@ -284,6 +303,10 @@ fn resolve_default_profile(email: &str) -> UserProfile {
             attendance_rate: 100.0,
             status: "regular".to_string(),
             expires_at: Some("2026-11-30".to_string()),
+            enrolled_courses: Some(vec![
+                "course_tc_701".to_string(),
+                "cl_radioprotecao_40h".to_string(),
+            ]),
         }
     }
 }

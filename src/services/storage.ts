@@ -747,6 +747,7 @@ export const storageService = {
       totalRequiredHours: user.totalRequiredHours || 180,
       attendanceRate: user.attendanceRate || 100,
       status: user.status || 'regular',
+      enrolledCourses: user.enrolledCourses || [],
       createdAt: user.createdAt || new Date().toLocaleDateString('pt-BR')
     };
     list.push(newUser);
@@ -831,6 +832,12 @@ export const storageService = {
       return { success: false, message: 'Senha incorreta. Você pode utilizar sua senha cadastrada ou seu código de matrícula.' };
     }
 
+    if (!user.enrolledCourses) {
+      user.enrolledCourses = user.role === 'admin' || user.role === 'professor'
+        ? ['course_tc_701', 'course_rm_802', 'course_rx_304', 'course_prot_510', 'cl_radioprotecao_40h']
+        : (user.id === 'usr_student_01' || user.email === 'lucas.mendonca@radbio.edu.br' ? ['course_tc_701', 'course_rm_802', 'cl_radioprotecao_40h'] : []);
+    }
+
     const session = { isAuthenticated: true, user };
     this.setAuthSession(session);
     return { success: true, message: `Bem-vindo de volta, ${user.name}!`, user };
@@ -839,13 +846,22 @@ export const storageService = {
   getCurrentUser(): User {
     const session = this.getAuthSession();
     if (session.isAuthenticated && session.user) {
-      return session.user;
+      const u = session.user;
+      if (!u.enrolledCourses) {
+        u.enrolledCourses = u.role === 'admin' || u.role === 'professor'
+          ? ['course_tc_701', 'course_rm_802', 'course_rx_304', 'course_prot_510', 'cl_radioprotecao_40h']
+          : (u.id === 'usr_student_01' ? ['course_tc_701', 'course_rm_802', 'cl_radioprotecao_40h'] : []);
+      }
+      return u;
     }
     const data = safeGetItem(KEYS.USER);
     if (data) {
       try {
         const user = JSON.parse(data);
-        if (user && user.id) return user;
+        if (user && user.id) {
+          if (!user.enrolledCourses) user.enrolledCourses = [];
+          return user;
+        }
       } catch {}
     }
     return {
@@ -860,7 +876,8 @@ export const storageService = {
       completedHours: 0,
       totalRequiredHours: 0,
       attendanceRate: 0,
-      status: 'regular'
+      status: 'regular',
+      enrolledCourses: []
     };
   },
 
@@ -873,25 +890,155 @@ export const storageService = {
     window.dispatchEvent(new CustomEvent('radbio_state_changed'));
   },
 
-  getCourses(): Course[] {
-    const data = safeGetItem(KEYS.COURSES);
-    if (!data) {
-      safeSetItem(KEYS.COURSES, JSON.stringify(initialCourses));
-      return initialCourses;
+  /**
+   * Checks whether a specific user is enrolled in a given course
+   */
+  isUserEnrolledInCourse(courseId: string, user?: User | null): boolean {
+    const targetUser = user || this.getCurrentUser();
+    if (!targetUser) return false;
+
+    // Admin and Professors have unrestricted full access
+    if (targetUser.role === 'admin' || targetUser.role === 'professor') {
+      return true;
     }
-    try {
-      const cached: Course[] = JSON.parse(data);
-      const missing = initialCourses.filter(ic => !cached.some(c => c.id === ic.id));
-      if (missing.length > 0) {
-        const merged = [...cached, ...missing];
-        safeSetItem(KEYS.COURSES, JSON.stringify(merged));
-        return merged;
+
+    // Check direct enrolledCourses array on the User object
+    if (targetUser.enrolledCourses && Array.isArray(targetUser.enrolledCourses)) {
+      if (targetUser.enrolledCourses.includes(courseId) || targetUser.enrolledCourses.includes('all') || targetUser.enrolledCourses.includes('bundle_all')) {
+        return true;
       }
-      return cached;
-    } catch {
-      safeSetItem(KEYS.COURSES, JSON.stringify(initialCourses));
-      return initialCourses;
     }
+
+    // Demo student Beatriz has portfolio showcase courses
+    const userEmail = (targetUser.email || '').toLowerCase().trim();
+    const userId = targetUser.id;
+    if (userId === 'u_beatriz' || userEmail === 'beatriz.ramos@aluno.radbio.edu.br') {
+      return true;
+    }
+
+    // Check user-specific enrollments key in storage
+    const enrollmentsKey = `radbio_user_enrollments_${userId}`;
+    const emailKey = `radbio_user_enrollments_${userEmail}`;
+    const userEnrollmentsData = safeGetItem(enrollmentsKey) || (userEmail ? safeGetItem(emailKey) : null);
+    if (userEnrollmentsData) {
+      try {
+        const enrolledIds: string[] = JSON.parse(userEnrollmentsData);
+        if (enrolledIds.includes(courseId) || enrolledIds.includes('all') || enrolledIds.includes('bundle_all')) {
+          return true;
+        }
+      } catch {}
+    }
+
+    // Check approved payment transactions for this user
+    const txs = this.getPaymentTransactions();
+    const hasApprovedTx = txs.some(
+      t =>
+        (t.status === 'completed' || t.status === 'approved') &&
+        ((t.studentEmail && t.studentEmail.toLowerCase().trim() === userEmail) ||
+          (t.studentCpf && targetUser.cpf && t.studentCpf.replace(/\D/g, '') === targetUser.cpf.replace(/\D/g, ''))) &&
+        (t.courseId === courseId || t.courseId === 'bundle_all' || t.courseId === 'plan_full_access')
+    );
+
+    return hasApprovedTx;
+  },
+
+  /**
+   * Registers a course enrollment for a specific student user
+   */
+  addUserEnrollment(courseId: string, user?: User | null): void {
+    const targetUser = user || this.getCurrentUser();
+    if (!targetUser) return;
+    const userId = targetUser.id;
+    const userEmail = (targetUser.email || '').toLowerCase().trim();
+
+    // 1. Update enrolledCourses on the user object
+    const currentCourses = targetUser.enrolledCourses || [];
+    if (!currentCourses.includes(courseId)) {
+      targetUser.enrolledCourses = [...currentCourses, courseId];
+      this.setCurrentUser(targetUser);
+      this.updateUser(targetUser);
+    }
+
+    // 2. Persist in user-scoped keys
+    const enrollmentsKey = `radbio_user_enrollments_${userId}`;
+    let list: string[] = [];
+    const existing = safeGetItem(enrollmentsKey);
+    if (existing) {
+      try {
+        list = JSON.parse(existing);
+      } catch {}
+    }
+    if (!list.includes(courseId)) {
+      list.push(courseId);
+    }
+    safeSetItem(enrollmentsKey, JSON.stringify(list));
+    if (userEmail) {
+      safeSetItem(`radbio_user_enrollments_${userEmail}`, JSON.stringify(list));
+    }
+  },
+
+  getCourses(user?: User): Course[] {
+    const currentUser = user || this.getCurrentUser();
+    const data = safeGetItem(KEYS.COURSES);
+    let allCourses: Course[] = initialCourses;
+    if (data) {
+      try {
+        const cached: Course[] = JSON.parse(data);
+        const missing = initialCourses.filter(ic => !cached.some(c => c.id === ic.id));
+        if (missing.length > 0) {
+          allCourses = [...cached, ...missing];
+        } else {
+          allCourses = cached;
+        }
+      } catch {
+        allCourses = initialCourses;
+      }
+    } else {
+      safeSetItem(KEYS.COURSES, JSON.stringify(initialCourses));
+    }
+
+    // Admins and Professors see all courses
+    if (currentUser.role === 'admin' || currentUser.role === 'professor') {
+      return allCourses;
+    }
+
+    // Demo student Beatriz has demo courses
+    const userEmail = (currentUser.email || '').toLowerCase().trim();
+    if (currentUser.id === 'u_beatriz' || userEmail === 'beatriz.ramos@aluno.radbio.edu.br') {
+      return allCourses;
+    }
+
+    // For newly registered or regular students: return ONLY courses they actually enrolled/paid for
+    const enrolledCourses = allCourses.filter(c => this.isUserEnrolledInCourse(c.id, currentUser));
+
+    // Also include any 40h Cursos Livres they purchased
+    const cursosLivres = this.getCursosLivres(currentUser).filter(cl => cl.isEnrolled);
+    for (const cl of cursosLivres) {
+      if (!enrolledCourses.some(ec => ec.id === cl.id)) {
+        enrolledCourses.push({
+          id: cl.id,
+          code: cl.code,
+          title: cl.title,
+          description: cl.description,
+          credits: 4,
+          instructor: cl.instructor,
+          instructorTitle: cl.instructorTitle,
+          instructorAvatar: cl.instructorAvatar,
+          category: cl.category,
+          progress: cl.progressPercent || 0,
+          currentModule: 1,
+          totalModules: cl.modules.length,
+          grade: 10,
+          status: 'active',
+          nextDeadline: `Acesso ativo (60 dias)`,
+          nextDeliveryTitle: 'Avaliação de Certificação 40h',
+          coverImage: cl.coverImage,
+          price: cl.price
+        });
+      }
+    }
+
+    return enrolledCourses;
   },
 
   setCourses(courses: Course[]): void {
@@ -1178,35 +1325,40 @@ export const storageService = {
     window.dispatchEvent(new CustomEvent('radbio_state_changed'));
   },
 
-  getCursosLivres(): CursoLivre[] {
+  getCursosLivres(user?: User): CursoLivre[] {
+    const currentUser = user || this.getCurrentUser();
     const data = safeGetItem(KEYS.CURSOS_LIVRES);
-    if (!data) {
-      safeSetItem(KEYS.CURSOS_LIVRES, JSON.stringify(initialCursosLivres));
-      return initialCursosLivres;
-    }
-    try {
-      const cached: CursoLivre[] = JSON.parse(data);
-      const updatedList = initialCursosLivres.map(initialCourse => {
-        const existing = cached.find(c => c.id === initialCourse.id);
-        if (existing) {
-          return {
-            ...initialCourse,
-            isEnrolled: existing.isEnrolled ?? initialCourse.isEnrolled,
-            progressPercent: existing.progressPercent ?? initialCourse.progressPercent,
-            enrolledStudentsCount: existing.enrolledStudentsCount ?? initialCourse.enrolledStudentsCount
-          };
-        }
-        return initialCourse;
-      });
+    let allCourses: CursoLivre[] = initialCursosLivres;
+    if (data) {
+      try {
+        const cached: CursoLivre[] = JSON.parse(data);
+        const updatedList = initialCursosLivres.map(initialCourse => {
+          const existing = cached.find(c => c.id === initialCourse.id);
+          if (existing) {
+            return {
+              ...initialCourse,
+              progressPercent: existing.progressPercent ?? initialCourse.progressPercent,
+              enrolledStudentsCount: existing.enrolledStudentsCount ?? initialCourse.enrolledStudentsCount
+            };
+          }
+          return initialCourse;
+        });
 
-      const customCourses = cached.filter(c => !initialCursosLivres.some(ic => ic.id === c.id));
-      const finalList = [...updatedList, ...customCourses];
-      safeSetItem(KEYS.CURSOS_LIVRES, JSON.stringify(finalList));
-      return finalList;
-    } catch {
-      safeSetItem(KEYS.CURSOS_LIVRES, JSON.stringify(initialCursosLivres));
-      return initialCursosLivres;
+        const customCourses = cached.filter(c => !initialCursosLivres.some(ic => ic.id === c.id));
+        allCourses = [...updatedList, ...customCourses];
+      } catch {
+        allCourses = initialCursosLivres;
+      }
     }
+
+    // Dynamically calculate isEnrolled per user
+    return allCourses.map(course => {
+      const isEnrolled = this.isUserEnrolledInCourse(course.id, currentUser);
+      return {
+        ...course,
+        isEnrolled
+      };
+    });
   },
 
   setCursosLivres(courses: CursoLivre[]): void {
@@ -1418,6 +1570,15 @@ export const storageService = {
     this.savePaymentTransaction(enrichedTx);
 
     const currentUser = this.getCurrentUser();
+    
+    // Register enrollment specifically for this student
+    if (courseId === 'bundle_all' || courseId === 'plan_full_access') {
+      const all = initialCursosLivres.map(c => c.id);
+      all.forEach(cid => this.addUserEnrollment(cid, currentUser));
+    } else {
+      this.addUserEnrollment(courseId, currentUser);
+    }
+
     const updatedUser: User = {
       ...currentUser,
       enrolledAt: nowStr,

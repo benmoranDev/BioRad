@@ -115,7 +115,7 @@ export default function App() {
       if (currentSession.isAuthenticated && currentSession.user) {
         setCurrentUser(currentSession.user);
       }
-      setCourses(storageService.getCourses());
+      setCourses(storageService.getCourses(currentSession.user || undefined));
       setLessons(storageService.getLessons());
       setTasks(storageService.getTasks());
       setStudentGrades(storageService.getStudentGrades());
@@ -163,6 +163,7 @@ export default function App() {
     storageService.setAuthSession({ isAuthenticated: true, user });
     setAuthSession({ isAuthenticated: true, user });
     setCurrentUser(user);
+    setCourses(storageService.getCourses(user));
     showToast(`Bem-vindo à Biorad Cursos, ${user.name}!`);
   };
 
@@ -316,10 +317,18 @@ export default function App() {
 
   const pendingCount = tasks.filter(t => t.status === 'pending').length;
 
-  // Filter courses or lessons by search
+  // Filter courses or lessons for students (only enrolled courses) vs admin/professors (all)
+  const userEnrolledCourses = currentUser.role === 'admin' || currentUser.role === 'professor'
+    ? courses
+    : courses.filter(c => storageService.isUserEnrolledInCourse(c.id, currentUser));
+
   const displayCourses = searchTerm
-    ? courses.filter(c => c.title.toLowerCase().includes(searchTerm.toLowerCase()) || c.code.toLowerCase().includes(searchTerm.toLowerCase()))
-    : courses;
+    ? userEnrolledCourses.filter(c => c.title.toLowerCase().includes(searchTerm.toLowerCase()) || c.code.toLowerCase().includes(searchTerm.toLowerCase()))
+    : userEnrolledCourses;
+
+  const displayLessons = currentUser.role === 'admin' || currentUser.role === 'professor'
+    ? lessons
+    : lessons.filter(l => storageService.isUserEnrolledInCourse(l.courseId, currentUser) || l.isFreePreview);
 
   const isDark = theme === 'dark';
 
@@ -433,7 +442,7 @@ export default function App() {
 
             {currentTab === 'aulas' && (
               <ClassroomView
-                lessons={lessons}
+                lessons={displayLessons}
                 courses={displayCourses}
                 activeLesson={activeLesson}
                 onSelectLesson={setActiveLesson}
@@ -451,6 +460,8 @@ export default function App() {
                 courses={courses}
                 studentName={currentUser.name}
                 enrollmentId={currentUser.enrollmentId}
+                currentUser={currentUser}
+                onShowToast={showToast}
                 onRequestReview={() => showToast('Solicitação de revisão enviada para a banca docente.')}
                 onValidateAuthenticity={() => handleNavigateTab('certificados')}
                 theme={theme}
