@@ -6,8 +6,8 @@ use axum::{
 };
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
-use crate::models::{ApiResponse, AuditLog};
+use serde_json::{json, Value};
+use crate::models::{ApiResponse, AuditLog, PaymentAuditLog};
 use crate::routes::auth::AppState;
 use crate::services::mercadopago::{
     CheckoutResponse, CreateCheckoutRequest, MercadoPagoWebhookPayload, WebhookProcessResult,
@@ -109,13 +109,25 @@ pub async fn process_checkout_handler(
 
 /// POST & GET /api/payments/webhook
 /// Receives asynchronous IPN / Webhook notifications from Mercado Pago
-/// Automatically updates payment status in database and unlocks student enrollment
+/// Automatically updates payment status in database, unlocks student enrollment,
+/// and saves complete raw payload and outcome into `payment_logs` Supabase table for audit.
 pub async fn mercadopago_webhook_handler(
     State(state): State<AppState>,
     Query(query_params): Query<WebhookQueryParams>,
     body: Option<Json<MercadoPagoWebhookPayload>>,
 ) -> Response {
-    // 1. Resolve payment ID from body or query params
+    // 1. Capture raw payload received from query and body
+    let raw_payload = json!({
+        "query_params": {
+            "topic": &query_params.topic,
+            "id": &query_params.id,
+            "type": &query_params.r#type,
+            "data.id": &query_params.data_id
+        },
+        "body": body.as_ref().map(|b| serde_json::to_value(&b.0).unwrap_or(Value::Null))
+    });
+
+    // 2. Resolve payment ID from body or query params
     let payment_id = if let Some(ref q_id) = query_params.data_id {
         Some(q_id.clone())
     } else if let Some(ref q_id) = query_params.id {
@@ -134,6 +146,29 @@ pub async fn mercadopago_webhook_handler(
         Some(id) if !id.trim().is_empty() => id.trim().to_string(),
         _ => {
             tracing::warn!("Webhook Mercado Pago recebido sem ID de pagamento identificado.");
+            
+            // Record in Supabase payment_logs
+            let payment_log = PaymentAuditLog {
+                id: format!("plog_{}", uuid::Uuid::new_v4().simple()),
+                event_type: "webhook_ignored".to_string(),
+                payment_id: None,
+                topic: query_params.topic.clone().or(query_params.r#type.clone()),
+                status: "ignored".to_string(),
+                raw_payload: raw_payload.clone(),
+                processing_result: json!({
+                    "status": "ignored",
+                    "reason": "Nenhum ID de pagamento informado na notificação."
+                }),
+                student_email: None,
+                course_id: None,
+                amount: None,
+                ip_address: Some("MercadoPago-IPN".to_string()),
+                user_agent: Some("MercadoPago-Webhook/v1".to_string()),
+                error_message: Some("No payment ID in webhook notification".to_string()),
+                created_at: Utc::now().to_rfc3339(),
+            };
+            let _ = state.supabase.insert_payment_log(&payment_log).await;
+
             return (
                 StatusCode::OK,
                 Json(json!({
@@ -147,11 +182,34 @@ pub async fn mercadopago_webhook_handler(
 
     tracing::info!("🔔 Processando Webhook Mercado Pago para o pagamento ID: {}", payment_id);
 
-    // 2. Fetch real payment details from Mercado Pago API
+    // 3. Fetch real payment details from Mercado Pago API
     let mp_payment = match state.mercadopago.get_payment_by_id(&payment_id).await {
         Ok(payment_json) => payment_json,
         Err(err) => {
             tracing::error!("Erro ao consultar pagamento {} no Mercado Pago: {:?}", payment_id, err);
+
+            // Record failure in Supabase payment_logs
+            let payment_log = PaymentAuditLog {
+                id: format!("plog_{}", uuid::Uuid::new_v4().simple()),
+                event_type: "webhook_fetch_error".to_string(),
+                payment_id: Some(payment_id.clone()),
+                topic: query_params.topic.clone().or(query_params.r#type.clone()),
+                status: "error".to_string(),
+                raw_payload: raw_payload.clone(),
+                processing_result: json!({
+                    "status": "error",
+                    "error": format!("{}", err)
+                }),
+                student_email: None,
+                course_id: None,
+                amount: None,
+                ip_address: Some("MercadoPago-IPN".to_string()),
+                user_agent: Some("MercadoPago-Webhook/v1".to_string()),
+                error_message: Some(format!("Erro ao consultar gateway Mercado Pago: {}", err)),
+                created_at: Utc::now().to_rfc3339(),
+            };
+            let _ = state.supabase.insert_payment_log(&payment_log).await;
+
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -171,13 +229,13 @@ pub async fn mercadopago_webhook_handler(
 
     let now_iso = Utc::now().to_rfc3339();
 
-    // 3. If payment is approved / accredited, update database and enroll student
+    // 4. If payment is approved / accredited, update database and enroll student
     let is_approved = status == "approved" || status == "accredited";
 
     let course_id = if description.to_lowercase().contains("40h") || description.to_lowercase().contains("tomografia") {
-        "curso_tc_40h"
+        "course_tc_701"
     } else {
-        "curso_geral"
+        "course_geral"
     };
 
     let payment_record = json!({
@@ -209,7 +267,7 @@ pub async fn mercadopago_webhook_handler(
             .await;
         enrolled = enroll_res.unwrap_or(true);
 
-        // Record audit log
+        // Record general audit log
         let audit = AuditLog {
             id: format!("audit_{}", uuid::Uuid::new_v4().simple()),
             user_id: "mercadopago_webhook".to_string(),
@@ -227,6 +285,41 @@ pub async fn mercadopago_webhook_handler(
         };
         let _ = state.supabase.insert_audit_log(&audit).await;
     }
+
+    // 5. Record structured audit entry in Supabase `payment_logs` table
+    let payment_log = PaymentAuditLog {
+        id: format!("plog_{}", uuid::Uuid::new_v4().simple()),
+        event_type: if is_approved {
+            "payment_approved".to_string()
+        } else {
+            format!("payment_{}", status)
+        },
+        payment_id: Some(payment_id.clone()),
+        topic: query_params.topic.clone().or(query_params.r#type.clone()),
+        status: status.clone(),
+        raw_payload: raw_payload.clone(),
+        processing_result: json!({
+            "status": &status,
+            "amount": amount,
+            "course_id": course_id,
+            "course_title": description,
+            "student_email": payer_email,
+            "payment_method": payment_method,
+            "enrolled": enrolled,
+            "access_period_days": 60,
+            "processed_at": now_iso
+        }),
+        student_email: Some(payer_email.to_string()),
+        course_id: Some(course_id.to_string()),
+        amount: Some(amount),
+        ip_address: Some("MercadoPago-IPN".to_string()),
+        user_agent: Some("MercadoPago-Webhook/v1".to_string()),
+        error_message: None,
+        created_at: Utc::now().to_rfc3339(),
+    };
+
+    let log_inserted = state.supabase.insert_payment_log(&payment_log).await.unwrap_or(false);
+    tracing::info!("📝 Log de auditoria do webhook salvo na tabela payment_logs: {}", log_inserted);
 
     tracing::info!(
         "✅ Webhook Mercado Pago processado com sucesso: Pagamento {} -> Status: {} (Matrícula Liberada: {})",
@@ -248,7 +341,7 @@ pub async fn mercadopago_webhook_handler(
                 course_id: Some(course_id.to_string()),
                 course_title: Some(description.to_string()),
                 enrolled,
-                message: "Matrícula sincronizada e acesso liberado com sucesso!".to_string(),
+                message: "Matrícula sincronizada e log de auditoria salvo na tabela payment_logs com sucesso!".to_string(),
             }),
             total: Some(1),
         }),

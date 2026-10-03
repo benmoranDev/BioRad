@@ -2,7 +2,7 @@ import { User, Course, Lesson, TaskPendency, StudentGradeRecord, RecentGradeItem
 
 export const adminUserBen: User = {
   id: 'usr_admin_ben',
-  name: 'Ben Moran',
+  name: 'Benito Moran',
   email: 'benmoran29dev@gmail.com',
   role: 'admin',
   avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
@@ -841,8 +841,8 @@ export const initialCertificates: Certificate[] = [
     courseName: 'Programa Avançado de Tomografia Computadorizada & Reconstruções 3D',
     workloadHours: 180,
     completionDate: '22 de Setembro de 2026',
-    instructorName: 'Prof. Dr. Aris Thorne',
-    instructorRole: 'Coordenador Acadêmico & Especialista CBR Titular',
+    instructorName: 'Prof. Roberto Alencar',
+    instructorRole: 'Coordenação Pedagógica & Especialista em Tomografia CBR',
     finalScore: 9.4,
     sha256Hash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
     qrValidationUrl: 'https://radbio.edu.br/validar/RADBIO-CERT-2025-9941-TC'

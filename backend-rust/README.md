@@ -31,6 +31,7 @@ Estrutura de microserviço back-end em **Rust** de alta performance e baixo cons
 | `POST` | `/api/courses` | Criação/atualização de disciplina |
 | `GET` | `/api/certificates/verify/:code` | Validação oficial de certificados com QR Code |
 | `GET` | `/api/audit-logs` | Consulta paginada com filtros por data e usuário |
+| `GET` | `/api/audit-logs/payments` | Consulta de logs de auditoria dos webhooks Mercado Pago salvos em `payment_logs` |
 | `POST` | `/api/audit-logs` | Registro contínuo de evento de auditoria |
 
 ---

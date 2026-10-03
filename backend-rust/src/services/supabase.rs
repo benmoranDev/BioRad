@@ -1,5 +1,5 @@
 use crate::config::AppConfig;
-use crate::models::{AuditLog, Certificate, Course, Lesson, UserProfile};
+use crate::models::{AuditLog, Certificate, Course, Lesson, PaymentAuditLog, UserProfile};
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION};
 use reqwest::Client;
 use serde_json::{json, Value};
@@ -196,5 +196,29 @@ impl SupabaseService {
             .await?;
 
         Ok(resp.status().is_success() || resp.status().as_u16() == 201)
+    }
+
+    /// Record a payment / webhook audit log in Supabase `payment_logs` table
+    pub async fn insert_payment_log(&self, log: &PaymentAuditLog) -> Result<bool, reqwest::Error> {
+        let url = format!("{}/rest/v1/payment_logs", self.config.supabase_url);
+        let resp = self.client
+            .post(&url)
+            .header("Prefer", "return=minimal")
+            .json(log)
+            .send()
+            .await?;
+        Ok(resp.status().is_success() || resp.status().as_u16() == 201)
+    }
+
+    /// Fetch payment audit logs from Supabase `payment_logs` table
+    pub async fn get_payment_logs(&self) -> Result<Vec<PaymentAuditLog>, reqwest::Error> {
+        let url = format!("{}/rest/v1/payment_logs?select=*&order=created_at.desc&limit=100", self.config.supabase_url);
+        let resp = self.client.get(&url).send().await?;
+        if resp.status().is_success() {
+            let logs: Vec<PaymentAuditLog> = resp.json().await?;
+            Ok(logs)
+        } else {
+            Ok(vec![])
+        }
     }
 }

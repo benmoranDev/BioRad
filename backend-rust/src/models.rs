@@ -182,3 +182,27 @@ pub struct CourseAccessCheckResponse {
     pub user_role: String,
     pub reason: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PaymentAuditLog {
+    pub id: String,
+    pub event_type: String, // e.g. "webhook_received", "payment_approved", "payment_pending", "payment_error"
+    pub payment_id: Option<String>,
+    pub topic: Option<String>,
+    pub status: String,
+    pub raw_payload: serde_json::Value,
+    pub processing_result: serde_json::Value,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub student_email: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub course_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub amount: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ip_address: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub user_agent: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error_message: Option<String>,
+    pub created_at: String,
+}

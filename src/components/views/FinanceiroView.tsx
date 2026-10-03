@@ -19,6 +19,7 @@ import { storageService } from '../../services/storage';
 import { formatCpf } from '../../utils/cpfValidator';
 import { pdfExportService } from '../../services/pdfExport';
 import { emailService } from '../../services/emailService';
+import { FinancialDashboard } from '../dashboard/FinancialDashboard';
 
 interface FinanceiroViewProps {
   theme?: ThemeMode;
@@ -33,6 +34,7 @@ export const FinanceiroView: React.FC<FinanceiroViewProps> = ({
 }) => {
   const isDark = theme === 'dark';
   const currentUser: User = storageService.getCurrentUser();
+  const [activeMainTab, setActiveMainTab] = useState<'dashboard' | 'auditoria'>('dashboard');
   const [transactions, setTransactions] = useState<PaymentTransaction[]>(() => storageService.getPaymentTransactions());
   const [cursosLivres] = useState<CursoLivre[]>(() => storageService.getCursosLivres());
   const [registeredUsers] = useState<User[]>(() => storageService.getRegisteredUsers());
@@ -312,6 +314,45 @@ export const FinanceiroView: React.FC<FinanceiroViewProps> = ({
         </div>
       )}
 
+      {/* Main Top Navigation Switcher */}
+      <div className="flex flex-wrap items-center justify-between gap-4 p-2 rounded-2xl bg-black/20 border border-white/10 backdrop-blur-xl">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveMainTab('dashboard')}
+            className={`px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer ${
+              activeMainTab === 'dashboard'
+                ? 'bg-gradient-to-r from-cyan-500 to-emerald-400 text-slate-950 shadow-lg shadow-cyan-500/20 font-extrabold'
+                : isDark ? 'text-slate-400 hover:text-white hover:bg-white/5' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            }`}
+          >
+            <span className="material-symbols-outlined text-base">bar_chart</span>
+            <span>Dashboard Financeiro (PIX vs Cartão)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveMainTab('auditoria')}
+            className={`px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer ${
+              activeMainTab === 'auditoria'
+                ? 'bg-gradient-to-r from-cyan-500 to-emerald-400 text-slate-950 shadow-lg shadow-cyan-500/20 font-extrabold'
+                : isDark ? 'text-slate-400 hover:text-white hover:bg-white/5' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            }`}
+          >
+            <span className="material-symbols-outlined text-base">credit_card</span>
+            <span>Auditoria de Cartão &amp; Estornos</span>
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2 text-xs font-mono text-cyan-400 font-bold px-3 py-1 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
+          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+          <span>Mercado Pago IPN Online</span>
+        </div>
+      </div>
+
+      {activeMainTab === 'dashboard' ? (
+        <FinancialDashboard theme={theme} onShowToast={onShowToast} onNavigateTab={onNavigateTab} />
+      ) : (
+        <>
       {/* Header Banner */}
       <section className="relative overflow-hidden rounded-3xl border p-6 sm:p-8 backdrop-blur-2xl transition-all shadow-xl bg-gradient-to-r from-cyan-600/15 via-purple-600/10 to-transparent border-cyan-400/30">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
@@ -1003,6 +1044,8 @@ export const FinanceiroView: React.FC<FinanceiroViewProps> = ({
           </table>
         </div>
       </div>
+      </>
+      )}
 
       {/* ================= MODAL: DETALHES COMPLETOS DA TRANSAÇÃO ================= */}
       {selectedTxForDetails && (

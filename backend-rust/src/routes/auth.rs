@@ -239,7 +239,7 @@ fn resolve_default_profile(email: &str) -> UserProfile {
     if lower.contains("ben") || lower.contains("admin") {
         UserProfile {
             id: "u_ben_moran".to_string(),
-            name: "Ben Moran".to_string(),
+            name: "Benito Moran".to_string(),
             email: lower,
             role: UserRole::Admin,
             avatar: Some("https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80".to_string()),

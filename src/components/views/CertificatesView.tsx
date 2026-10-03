@@ -165,7 +165,7 @@ export const CertificatesView: React.FC<CertificatesViewProps> = ({
             </div>
             <p className={`text-xs mt-1 leading-relaxed ${isDark ? 'text-gray-300' : 'text-slate-700'}`}>
               {isEligibleForCertificate
-                ? 'Todas as aulas e vídeos de Tomografia Computadorizada foram 100% concluídos. A emissão do certificado horizontal com registro oficial de Ben Moran (Admin) está liberada!'
+                ? 'Todas as aulas e vídeos de Tomografia Computadorizada foram 100% concluídos. A emissão do certificado horizontal com registro oficial de Benito Moran (Admin) está liberada!'
                 : 'Conforme as diretrizes acadêmicas da RadBio e regulação do MEC/LDB, o comprovante e certificado oficial só é emitido após o aluno concluir 100% das videoaulas e atividades.'}
             </p>
           </div>
@@ -451,7 +451,7 @@ export const CertificatesView: React.FC<CertificatesViewProps> = ({
                     </div>
                     <div>
                       <div className="w-40 sm:w-48 mx-auto border-t border-gray-900 pt-1 font-bold text-gray-900 font-serif">
-                        Ben Moran
+                        Benito Moran
                       </div>
                       <span className="text-[10px] text-gray-500 font-sans block">
                         Administrador Geral • Biorad Cursos

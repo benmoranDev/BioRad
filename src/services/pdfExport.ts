@@ -267,7 +267,7 @@ function generateVectorLandscapePdf(cert: Certificate, qrDataUrl?: string): jsPD
   doc.setTextColor(107, 114, 128);
   doc.text(cert.instructorRole, sigLeftCenter, sigY + 8.8, { align: 'center', maxWidth: sigLineWidth });
 
-  // Signature 2: Ben Moran (Admin Geral & Conselho RadBio) (Right)
+  // Signature 2: Benito Moran (Admin Geral & Conselho RadBio) (Right)
   const sigRightCenter = pageWidth - 65;
   const sigRightStart = sigRightCenter - sigLineWidth / 2;
   const sigRightEnd = sigRightCenter + sigLineWidth / 2;
@@ -279,7 +279,7 @@ function generateVectorLandscapePdf(cert: Certificate, qrDataUrl?: string): jsPD
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.setTextColor(17, 24, 39);
-  doc.text('Ben Moran', sigRightCenter, sigY + 4.8, { align: 'center' });
+  doc.text('Benito Moran', sigRightCenter, sigY + 4.8, { align: 'center' });
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
@@ -540,12 +540,12 @@ export const pdfExportService = {
           <div class="signatures">
             <div class="signature-box">
               <div class="signature-line"></div>
-              <strong>${cert.instructorName}</strong><br />
-              <span style="font-size: 10px; color: #4b5563;">${cert.instructorRole}</span>
+              <strong>Prof. Roberto Alencar</strong><br />
+              <span style="font-size: 10px; color: #4b5563;">Coordenação Pedagógica • Especialista em Imagem CBR</span>
             </div>
             <div class="signature-box">
               <div class="signature-line"></div>
-              <strong>Ben Moran</strong><br />
+              <strong>Benito Moran</strong><br />
               <span style="font-size: 10px; color: #4b5563;">Administrador Geral do Sistema • Biorad Cursos</span>
             </div>
           </div>
@@ -829,27 +829,27 @@ export const pdfExportService = {
     doc.setDrawColor(148, 163, 184);
     doc.setLineWidth(0.5);
 
-    // Signature 1
+    // Signature 1: Coordenação Pedagógica (Prof. Roberto Alencar)
     doc.line(margin + 12, sigY + 14, margin + 76, sigY + 14);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8.5);
     doc.setTextColor(15, 23, 42);
-    doc.text('Prof. Dr. Marcus Vinicius', margin + 44, sigY + 18, { align: 'center' });
+    doc.text('Prof. Roberto Alencar', margin + 44, sigY + 18, { align: 'center' });
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
     doc.setTextColor(100, 116, 139);
-    doc.text('Coordenação Pedagógica CBR', margin + 44, sigY + 22, { align: 'center' });
+    doc.text('Coordenação Pedagógica • Especialista CBR', margin + 44, sigY + 22, { align: 'center' });
 
-    // Signature 2
+    // Signature 2: Administração Geral (Benito Moran)
     doc.line(pageWidth - margin - 76, sigY + 14, pageWidth - margin - 12, sigY + 14);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8.5);
     doc.setTextColor(15, 23, 42);
-    doc.text('Ben Moran', pageWidth - margin - 44, sigY + 18, { align: 'center' });
+    doc.text('Benito Moran', pageWidth - margin - 44, sigY + 18, { align: 'center' });
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
     doc.setTextColor(100, 116, 139);
-    doc.text('Administração Geral do Sistema', pageWidth - margin - 44, sigY + 22, { align: 'center' });
+    doc.text('Administração Geral do Sistema • Biorad Cursos', pageWidth - margin - 44, sigY + 22, { align: 'center' });
 
     // Footer Security & Digital Signature
     const footY = pageHeight - margin - 10;
@@ -919,7 +919,7 @@ export const pdfExportService = {
         </table>
         <div class="stamp">
           <strong>DOCUMENTO AUTÊNTICO ASSINADO DIGITALMENTE</strong><br/>
-          Assinatura acadêmica com carimbo de tempo verificado no portal Biorad Cursos por Ben Moran (Admin). Válido para comprovação curricular e estágio hospitalar.
+          Assinatura acadêmica com carimbo de tempo verificado no portal Biorad Cursos por Benito Moran (Admin). Válido para comprovação curricular e estágio hospitalar.
         </div>
       </body>
       </html>
@@ -1097,7 +1097,7 @@ export const pdfExportService = {
     doc.setFontSize(7.5);
     doc.setTextColor(148, 163, 184);
     doc.text(
-      'Biorad Cursos • Soluções em Imagem e Educação Médica S/A • Autenticado digitalmente por Ben Moran (Admin Geral)',
+      'Biorad Cursos • Soluções em Imagem e Educação Médica S/A • Autenticado digitalmente por Benito Moran (Admin Geral)',
       pageWidth / 2,
       192,
       { align: 'center' }

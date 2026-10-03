@@ -47,8 +47,9 @@ pub fn create_router(state: AppState) -> Router {
         // Certificate Validation
         .route("/api/certificates/verify/:code", get(certificates::verify_certificate_handler))
         
-        // Audit Logs
+        // Audit Logs (System & Mercado Pago Payment Webhooks)
         .route("/api/audit-logs", get(audit::list_audit_logs_handler).post(audit::record_audit_log_handler))
+        .route("/api/audit-logs/payments", get(audit::list_payment_logs_handler))
         
         .with_state(state)
 }
